@@ -43,7 +43,9 @@ export function Navbar() {
 
         <div className="flex items-center space-x-2">
           <ThemeToggle />
-          <Button className="hidden md:flex">Sign In</Button>
+          <Link to="/login" className="hidden md:flex">
+            <Button>Login</Button>
+          </Link>
           
           {/* Mobile menu button */}
           <Button

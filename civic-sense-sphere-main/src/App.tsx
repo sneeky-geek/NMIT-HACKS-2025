@@ -9,6 +9,9 @@ import CivicScroll from "./pages/CivicScroll";
 import SmartDustbin from "./pages/SmartDustbin";
 import CivicWallet from "./pages/CivicWallet";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import OtpVerification from "./pages/OtpVerification";
+import Signup from "./pages/Signup";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +23,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/verify" element={<OtpVerification />} />
           <Route path="/civic-scroll" element={<CivicScroll />} />
           <Route path="/smart-dustbin" element={<SmartDustbin />} />
           <Route path="/civic-wallet" element={<CivicWallet />} />
