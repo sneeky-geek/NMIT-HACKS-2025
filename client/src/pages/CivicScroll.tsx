@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Volume2, Share, Plus, VolumeX, X } from "lucide-react";
+import { Heart, Volume2, Share, Plus, VolumeX, X, ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { toast } from "@/hooks/use-toast";
@@ -60,6 +60,9 @@ interface Reel {
   createdAt: Date;
 }
 
+// Add VerificationState type
+type VerificationState = 'idle' | 'verifying' | 'success' | 'uploading';
+
 // No longer need IndexedDB for storage as we're using the backend
 
 // Ensure consistent user ID across sessions
@@ -72,6 +75,17 @@ const getUserId = () => {
   return newUserId;
 };
 
+// Add at the top, after imports
+const VERIFICATION_STEPS = [
+  { key: 'frame', label: 'Extracting video frames' },
+  { key: 'visual', label: 'Analyzing visual content' },
+  { key: 'audio', label: 'Analyzing audio & speech' },
+  { key: 'text', label: 'Checking captions & metadata' },
+  { key: 'scene', label: 'Classifying scenes' },
+  { key: 'policy', label: 'Checking policy compliance' },
+  { key: 'report', label: 'Generating moderation report' },
+];
+
 const CivicScroll = () => {
   const [reels, setReels] = useState<Reel[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -83,6 +97,10 @@ const CivicScroll = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  // Add verification state
+  const [verificationState, setVerificationState] = useState<VerificationState>('idle');
+  const [verificationProgress, setVerificationProgress] = useState(0);
+  const [currentVerificationStep, setCurrentVerificationStep] = useState(0);
   
   // Get consistent user ID
   const currentUserId = useMemo(() => getUserId(), []);
@@ -93,8 +111,8 @@ const CivicScroll = () => {
       // Only show user's uploaded reels in "My Reels"
       return reels.filter(reel => reel.userId === currentUserId);
     } else {
-      // Only show system reels in "All Reels"
-      return reels.filter(reel => reel.userId?.startsWith('system_'));
+      // Show all reels in "All Reels"
+      return reels;
     }
   }, [reels, viewMode, currentUserId]);
   
@@ -283,17 +301,34 @@ const CivicScroll = () => {
 
   const handleFileUpload = async () => {
     if (!selectedFile) return;
-
     try {
+      setVerificationState('verifying');
+      setVerificationProgress(0);
+      setCurrentVerificationStep(0);
+      // Simulate step-by-step AI verification (total ~16s)
+      const totalDuration = 16000; // ms
+      const steps = VERIFICATION_STEPS.length;
+      const stepDuration = totalDuration / steps;
+      for (let i = 0; i < steps; i++) {
+        setCurrentVerificationStep(i);
+        // Animate progress bar for this step
+        const start = Math.floor((i / steps) * 100);
+        const end = Math.floor(((i + 1) / steps) * 100);
+        const progressStep = (end - start) / 10;
+        for (let p = start; p < end; p += progressStep) {
+          setVerificationProgress(Math.min(99, Math.floor(p)));
+          await new Promise(res => setTimeout(res, stepDuration / 10));
+        }
+        setVerificationProgress(end);
+        await new Promise(res => setTimeout(res, stepDuration / 2));
+      }
+      setVerificationProgress(100);
+      setVerificationState('success');
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      setVerificationState('uploading');
       setIsLoading(true);
-      
-      // Import uploadReel function from our API
       const { uploadReel } = await import('@/api/reels');
-      
-      // Upload file to backend
       const uploadedReel = await uploadReel(selectedFile, currentUserId);
-      
-      // Create a new reel object from the backend response
       const newReel: Reel = {
         id: uploadedReel._id,
         likes: uploadedReel.likes,
@@ -306,41 +341,20 @@ const CivicScroll = () => {
         userId: uploadedReel.userId,
         createdAt: new Date(uploadedReel.createdAt)
       };
-
-      // Add the new reel to the beginning of the list
       setReels(prevReels => [newReel, ...prevReels]);
       setCurrentIndex(0);
-      
-      // Switch to 'my' view mode to show the uploaded reel
       setViewMode('my');
-      
-      // Reset state
       setSelectedFile(null);
       setUploadDialogOpen(false);
-      
-      // Clear file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      
-      // Trigger confetti
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      toast({
-        title: "New Reel Created!",
-        description: "Your civic reel is ready to view",
-      });
+      setVerificationState('idle');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      toast({ title: "New Reel Created!", description: "Your civic reel is ready to view" });
+      window.location.reload();
     } catch (error) {
       console.error('Error creating reel:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create reel. Please try again.",
-        variant: "destructive"
-      });
+      toast({ title: "Error", description: "Failed to create reel. Please try again.", variant: "destructive" });
+      setVerificationState('idle');
     } finally {
       setIsLoading(false);
     }
@@ -397,20 +411,18 @@ const CivicScroll = () => {
   const toggleSound = async (id: string) => {
     try {
       // First, update UI for immediate feedback
-      const updatedReels = reels.map((reel) => {
+      const updatedReels = reels.map((reel, idx) => {
         if (reel.id === id) {
           const newSoundOn = !reel.soundOn;
-          
           // If this is the current reel, also update the video element
-          if (currentIndex !== -1 && reels[currentIndex]?.id === id) {
+          if (currentIndex !== -1 && filteredReels[currentIndex]?.id === id) {
             const videoElement = document.querySelector(`video[key="${id}"]`) as HTMLVideoElement;
             if (videoElement) {
-              // If turning sound on, we need user interaction
               if (newSoundOn) {
                 if (hasUserInteracted) {
                   videoElement.muted = false;
+                  videoElement.volume = 1;
                 } else {
-                  // If no user interaction yet, show a toast
                   toast({
                     title: "Interaction Required",
                     description: "Please click anywhere on the page to enable sound",
@@ -421,22 +433,15 @@ const CivicScroll = () => {
               }
             }
           }
-          
           return { ...reel, soundOn: newSoundOn };
         }
         return reel;
       });
-      
       setReels(updatedReels);
-      
       // Find the updated reel to get its new soundOn value
       const updatedReel = updatedReels.find(reel => reel.id === id);
-      
       if (updatedReel) {
-        // Import updateReel function from our API
         const { updateReel } = await import('@/api/reels');
-        
-        // Update the soundOn setting in the backend
         await updateReel(id, { soundOn: updatedReel.soundOn });
       }
     } catch (error) {
@@ -446,8 +451,6 @@ const CivicScroll = () => {
         description: "Failed to update sound settings. Please try again.",
         variant: "destructive"
       });
-      
-      // Revert back to original state on error
       setReels([...reels]);
     }
   };
@@ -463,6 +466,12 @@ const CivicScroll = () => {
     if (currentIndex < filteredReels.length - 1) {
       setIsSwiping(true);
       setCurrentIndex(currentIndex + 1);
+      
+      // Pause any playing videos
+      const currentVideo = document.querySelector(`video[key="${filteredReels[currentIndex]?.id}"]`) as HTMLVideoElement;
+      if (currentVideo) {
+        currentVideo.pause();
+      }
     }
   };
 
@@ -470,6 +479,12 @@ const CivicScroll = () => {
     if (currentIndex > 0) {
       setIsSwiping(true);
       setCurrentIndex(currentIndex - 1);
+      
+      // Pause any playing videos
+      const currentVideo = document.querySelector(`video[key="${filteredReels[currentIndex]?.id}"]`) as HTMLVideoElement;
+      if (currentVideo) {
+        currentVideo.pause();
+      }
     }
   };
   
@@ -538,24 +553,22 @@ const CivicScroll = () => {
           </div>
         )}
         {/* Toggle buttons */}
-        <div className="flex items-center gap-2 mb-6 bg-black/20 p-1.5 rounded-full backdrop-blur-sm border border-purple-500/20 shadow-glass">
+        <div className="relative flex items-center mb-6 w-[260px] h-12 bg-zinc-900 rounded-full shadow-lg border border-purple-700/30 mt-[-16px]">
+          <motion.div
+            className="absolute top-1 left-1 h-10 w-[124px] bg-gradient-to-r from-purple-600 to-purple-700 rounded-full z-0 shadow-md"
+            animate={{ x: viewMode === 'all' ? 0 : 128 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            style={{ width: '124px' }}
+          />
           <button
             onClick={() => setViewMode('all')}
-            className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-              viewMode === 'all'
-                ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg'
-                : 'text-white hover:bg-white/10'
-            }`}
+            className={`relative z-10 w-[124px] h-10 rounded-full text-base font-semibold transition-all duration-300 focus:outline-none ${viewMode === 'all' ? 'text-white' : 'text-purple-300 hover:text-white'}`}
           >
-            System Reels
+            All Reels
           </button>
           <button
             onClick={() => setViewMode('my')}
-            className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-              viewMode === 'my'
-                ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg'
-                : 'text-white hover:bg-white/10'
-            }`}
+            className={`relative z-10 w-[124px] h-10 rounded-full text-base font-semibold transition-all duration-300 focus:outline-none ${viewMode === 'my' ? 'text-white' : 'text-purple-300 hover:text-white'}`}
           >
             My Reels
           </button>
@@ -570,22 +583,29 @@ const CivicScroll = () => {
           onChange={handleFileSelect}
         />
         
-        {/* Upload Dialog */}
+        {/* Upload Dialog with Verification UI */}
         <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Upload New Reel</DialogTitle>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="absolute right-4 top-4" 
-                onClick={handleCancelUpload}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <DialogTitle>
+                {verificationState === 'idle' && "Upload New Reel"}
+                {verificationState === 'verifying' && "AI Verification in Progress"}
+                {verificationState === 'success' && "Verification Complete"}
+                {verificationState === 'uploading' && "Uploading Content"}
+              </DialogTitle>
+              {verificationState === 'idle' && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-4 top-4" 
+                  onClick={handleCancelUpload}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              {selectedFile && (
+              {verificationState === 'idle' && selectedFile && (
                 <div className="mt-2 p-2 border rounded-md">
                   <p className="text-sm">{selectedFile.name}</p>
                   <p className="text-xs text-muted-foreground">
@@ -593,14 +613,109 @@ const CivicScroll = () => {
                   </p>
                 </div>
               )}
+              
+              {/* Verification Process UI */}
+              {verificationState === 'verifying' && (
+                <div className="flex flex-col items-center justify-center py-6 w-full">
+                  <div className="relative mb-6">
+                    <div className="w-24 h-24 rounded-full border-4 border-purple-100 flex items-center justify-center">
+                      <motion.div
+                        className="absolute inset-0 rounded-full border-4 border-purple-500"
+                        style={{
+                          pathLength: verificationProgress / 100,
+                          rotate: -90,
+                          strokeDasharray: "1, 1",
+                          strokeDashoffset: 0,
+                        }}
+                        animate={{
+                          borderWidth: [4, 6, 4],
+                          opacity: [0.8, 1, 0.8],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                      />
+                      <Loader2 className="h-10 w-10 text-purple-500 animate-spin" />
+                    </div>
+                  </div>
+                  <div className="w-full max-w-xs mx-auto mb-4">
+                    <ol className="space-y-2">
+                      {VERIFICATION_STEPS.map((step, idx) => (
+                        <li key={step.key} className="flex items-center gap-2">
+                          {idx < currentVerificationStep ? (
+                            <span className="text-green-500"><svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg></span>
+                          ) : idx === currentVerificationStep ? (
+                            <span className="w-4 h-4 rounded-full bg-purple-500 animate-pulse inline-block" />
+                          ) : (
+                            <span className="w-4 h-4 rounded-full bg-gray-300 inline-block" />
+                          )}
+                          <span className={`text-sm ${idx === currentVerificationStep ? 'font-semibold text-purple-700' : idx < currentVerificationStep ? 'text-gray-500 line-through' : 'text-gray-400'}`}>{step.label}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                    <motion.div 
+                      className="bg-purple-600 h-2.5 rounded-full"
+                      initial={{ width: "0%" }}
+                      animate={{ width: `${verificationProgress}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">{verificationProgress}% complete</p>
+                </div>
+              )}
+              
+              {/* Verification Success UI */}
+              {verificationState === 'success' && (
+                <div className="flex flex-col items-center justify-center py-6">
+                  <motion.div 
+                    className="mb-6 bg-green-100 p-4 rounded-full"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ 
+                      type: "spring", 
+                      stiffness: 260, 
+                      damping: 20 
+                    }}
+                  >
+                    <ShieldCheck className="h-16 w-16 text-green-500" />
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <p className="text-center text-lg font-medium mb-2">Verification Complete</p>
+                    <p className="text-center text-sm text-gray-500">Your content has been approved and will be uploaded</p>
+                  </motion.div>
+                </div>
+              )}
+              
+              {/* Uploading UI */}
+              {verificationState === 'uploading' && (
+                <div className="flex flex-col items-center justify-center py-6">
+                  <div className="mb-6">
+                    <Loader2 className="h-12 w-12 text-purple-500 animate-spin" />
+                  </div>
+                  <p className="text-center text-lg font-medium mb-2">Uploading Content</p>
+                  <p className="text-center text-sm text-gray-500">Your verified content is being uploaded</p>
+                </div>
+              )}
             </div>
             <DialogFooter>
-              <Button onClick={handleCancelUpload} variant="outline">
-                Cancel
-              </Button>
-              <Button onClick={handleFileUpload} disabled={!selectedFile}>
-                Upload
-              </Button>
+              {verificationState === 'idle' && (
+                <>
+                  <Button onClick={handleCancelUpload} variant="outline">
+                    Cancel
+                  </Button>
+                  <Button onClick={handleFileUpload} disabled={!selectedFile}>
+                    Start Verification
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -665,10 +780,28 @@ const CivicScroll = () => {
                   }
                 };
                 
-                document.addEventListener('touchmove', handleTouchMove);
+                document.addEventListener('touchmove', handleTouchMove, { passive: false });
                 document.addEventListener('touchend', () => {
                   document.removeEventListener('touchmove', handleTouchMove);
                 }, { once: true });
+              }}
+              onClick={(e) => {
+                // Handle click to set user interaction and for taps on mobile
+                setHasUserInteracted(true);
+                
+                // Determine if click is on right or left side of the screen to navigate
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const width = rect.width;
+                
+                // Right side - next reel
+                if (x > width / 2) {
+                  handleSwipeUp();
+                } 
+                // Left side - previous reel
+                else {
+                  handleSwipeDown();
+                }
               }}
             >
               
@@ -677,16 +810,25 @@ const CivicScroll = () => {
                   <motion.div
                     key={filteredReels[currentIndex].id}
                     initial={{ 
-                      y: isSwiping ? 500 : 0, 
-                      opacity: isSwiping ? 0 : 1 
+                      y: 500, 
+                      opacity: 0,
+                      scale: 0.8
                     }}
                     animate={{ 
                       y: 0, 
-                      opacity: 1 
+                      opacity: 1,
+                      scale: 1
+                    }}
+                    exit={{
+                      y: -500,
+                      opacity: 0,
+                      scale: 0.8,
+                      transition: { duration: 0.3 }
                     }}
                     transition={{ 
-                      duration: 0.3,
-                      ease: "easeOut" 
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30
                     }}
                     className="absolute inset-0 flex flex-col"
                   >
@@ -702,7 +844,7 @@ const CivicScroll = () => {
                             autoPlay
                             loop
                             controls={false}
-                            muted={true}
+                            muted={!filteredReels[currentIndex].soundOn}
                             playsInline
                             onLoadedData={(e) => {
                               const video = e.target as HTMLVideoElement;
@@ -710,6 +852,7 @@ const CivicScroll = () => {
                                 .then(() => {
                                   if (hasUserInteracted && filteredReels[currentIndex].soundOn) {
                                     video.muted = false;
+                                    video.volume = 1;
                                   }
                                 })
                                 .catch(err => console.error('Error auto-playing video:', err));
@@ -745,6 +888,27 @@ const CivicScroll = () => {
                         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/90" />
                       </div>
                       
+                      {/* Scroll indicators */}
+                      <div className="absolute left-1/2 transform -translate-x-1/2 top-4 flex flex-col items-center">
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: currentIndex > 0 ? 0.7 : 0 }}
+                          className="w-8 h-8 flex items-center justify-center mb-1"
+                        >
+                          <div className="w-1 h-4 bg-white/60 rounded-full"></div>
+                        </motion.div>
+                      </div>
+                      
+                      <div className="absolute left-1/2 transform -translate-x-1/2 bottom-24 flex flex-col items-center">
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: currentIndex < filteredReels.length - 1 ? 0.7 : 0 }}
+                          className="w-8 h-8 flex items-center justify-center mt-1"
+                        >
+                          <div className="w-1 h-4 bg-white/60 rounded-full"></div>
+                        </motion.div>
+                      </div>
+                      
                       {/* Right side actions - Enhanced Instagram style */}
                       <div className="absolute right-4 bottom-24 flex flex-col items-center space-y-6">
                         <div className="flex flex-col items-center space-y-1">
@@ -752,7 +916,10 @@ const CivicScroll = () => {
                             variant="ghost" 
                             size="icon" 
                             className="text-white hover:bg-white/20 active:scale-90 transition-all duration-150 rounded-full h-14 w-14 backdrop-blur-sm"
-                            onClick={() => handleLike(filteredReels[currentIndex].id)}
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleLike(filteredReels[currentIndex].id);
+                            }}
                           >
                             <Heart 
                               className={`h-8 w-8 drop-shadow-lg transform transition-transform duration-200 ${filteredReels[currentIndex].isLiked ? "fill-red-500 text-red-500 scale-110" : "text-white"}`} 
@@ -765,7 +932,10 @@ const CivicScroll = () => {
                           variant="ghost" 
                           size="icon" 
                           className="text-white hover:bg-white/20 active:scale-90 transition-all duration-150 rounded-full h-14 w-14 backdrop-blur-sm"
-                          onClick={() => toggleSound(filteredReels[currentIndex].id)}
+                          onClick={e => {
+                            e.stopPropagation();
+                            toggleSound(filteredReels[currentIndex].id);
+                          }}
                         >
                           {filteredReels[currentIndex].soundOn ? 
                             <Volume2 className="h-8 w-8 drop-shadow-lg" /> : 
@@ -781,6 +951,20 @@ const CivicScroll = () => {
                         >
                           <Share className="h-8 w-8 drop-shadow-lg" />
                         </Button>
+                      </div>
+                      
+                      {/* Reel position indicator */}
+                      <div className="absolute top-2 right-2 left-2">
+                        <div className="flex gap-1">
+                          {filteredReels.map((_, index) => (
+                            <div 
+                              key={index}
+                              className={`h-0.5 rounded-full flex-1 ${
+                                index === currentIndex ? 'bg-white' : 'bg-white/30'
+                              }`}
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </motion.div>
