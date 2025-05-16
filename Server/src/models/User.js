@@ -38,10 +38,10 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     profile: {
-        address: String,
-        city: String,
-        state: String,
-        pincode: String
+        address: { type: String, required: false },
+        city: { type: String, required: false },
+        state: { type: String, required: false },
+        pincode: { type: String, required: false }
     }
 });
 

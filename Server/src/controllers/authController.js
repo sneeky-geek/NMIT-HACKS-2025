@@ -1,5 +1,5 @@
 import User from '../models/User.js';
-import { sendOTP, verifyOTP } from '../config/twilio.js';
+import { sendOTP, verifyOTP as verifyTwilioOTP, toE164 } from '../config/twilio.js';
 import jwt from 'jsonwebtoken';
 
 export const register = async (req, res) => {
@@ -7,7 +7,7 @@ export const register = async (req, res) => {
         const { 
             firstName, 
             lastName, 
-            phoneNumber, 
+            phoneNumber: rawPhoneNumber, 
             email,
             dateOfBirth,
             address,
@@ -15,6 +15,23 @@ export const register = async (req, res) => {
             state,
             pincode
         } = req.body;
+        
+        // Always format phone number to E.164 format for consistent storage
+        const phoneNumber = toE164(rawPhoneNumber);
+
+        // Basic validation
+        if (!firstName || !lastName || !phoneNumber || !email || !dateOfBirth) {
+            return res.status(400).json({ 
+                message: 'Missing required fields',
+                errors: {
+                    firstName: firstName ? undefined : 'First name is required',
+                    lastName: lastName ? undefined : 'Last name is required',
+                    phoneNumber: phoneNumber ? undefined : 'Phone number is required',
+                    email: email ? undefined : 'Email is required',
+                    dateOfBirth: dateOfBirth ? undefined : 'Date of birth is required'
+                }
+            });
+        }
 
         // Check if user already exists
         const existingUser = await User.findOne({ $or: [{ phoneNumber }, { email }] });
@@ -22,11 +39,11 @@ export const register = async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Create new user
+        // Create new user with formatted phone number
         const user = new User({ 
             firstName,
             lastName,
-            phoneNumber,
+            phoneNumber,  // This is now in E.164 format
             email,
             dateOfBirth,
             profile: {
@@ -36,25 +53,70 @@ export const register = async (req, res) => {
                 pincode
             }
         });
-        await user.save();
+        
+        console.log('Creating user with phone:', phoneNumber);
 
-        // Send OTP
-        await sendOTP(phoneNumber);
+        // Validate the user model
+        await user.validate();
 
-        res.status(201).json({ message: 'User created successfully. OTP sent to your phone number.' });
+        // Save to MongoDB
+        try {
+            await user.save();
+            console.log('User saved successfully with ID:', user._id);
+        } catch (saveError) {
+            console.error('Error saving user to MongoDB:', saveError);
+            throw saveError;
+        }
+
+        // Send OTP - no need to format again as it's already in E.164
+        const otpResult = await sendOTP(phoneNumber);
+        
+        if (otpResult.status === 'pending') {
+            res.status(201).json({ 
+                message: 'User created successfully. OTP sent to your phone number.',
+                userId: user._id
+            });
+        } else {
+            // OTP failed to send but user was created
+            res.status(201).json({ 
+                message: 'User created successfully, but OTP sending failed. Please try logging in.', 
+                userId: user._id,
+                otpError: otpResult.error || 'Unknown error sending OTP'
+            });
+        }
     } catch (error) {
         console.error('Registration error:', error);
+        
+        // Handle validation errors
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ 
+                message: 'Validation failed',
+                errors: error.errors
+            });
+        }
+
         res.status(500).json({ message: 'Registration failed' });
     }
 };
 
+
 export const verifyOTP = async (req, res) => {
     try {
-        const { phoneNumber, code } = req.body;
-        const verification = await verifyOTP(phoneNumber, code);
+        const { phoneNumber: rawPhoneNumber, code } = req.body;
+        const formattedPhone = toE164(rawPhoneNumber);
+        
+        console.log('Verifying OTP for phone:', formattedPhone, 'with code:', code);
+        
+        // First check if the user exists
+        const user = await User.findOne({ phoneNumber: formattedPhone });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found with this phone number' });
+        }
+        
+        const verification = await verifyTwilioOTP(formattedPhone, code);
 
         if (verification.status === 'approved') {
-            const user = await User.findOne({ phoneNumber });
+            const user = await User.findOne({ phoneNumber: formattedPhone });
             if (user) {
                 user.verified = true;
                 await user.save();
@@ -73,7 +135,11 @@ export const verifyOTP = async (req, res) => {
                         id: user._id,
                         phoneNumber: user.phoneNumber,
                         email: user.email,
-                        verified: user.verified
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        dateOfBirth: user.dateOfBirth,
+                        verified: user.verified,
+                        profile: user.profile
                     }
                 });
             } else {
@@ -88,41 +154,27 @@ export const verifyOTP = async (req, res) => {
     }
 };
 
+
 export const login = async (req, res) => {
     try {
-        const { phoneNumber } = req.body;
+        const { phoneNumber: rawPhoneNumber } = req.body;
+        const formattedPhone = toE164(rawPhoneNumber);
 
-        // Find user
-        const user = await User.findOne({ phoneNumber });
+        console.log('Attempting login with formatted phone:', formattedPhone);
+        
+        // Find user - use the formatted phone for consistent lookup
+        const user = await User.findOne({ phoneNumber: formattedPhone });
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'User not found. Please sign up first.' });
         }
 
-        // Check if verified
-        if (!user.verified) {
-            return res.status(403).json({ message: 'Account not verified' });
+        // Send OTP for login
+        const otpResult = await sendOTP(formattedPhone);
+        if (otpResult.status === 'pending') {
+            res.status(200).json({ message: 'OTP sent to your phone number.' });
+        } else {
+            res.status(500).json({ message: 'Failed to send OTP for login.' });
         }
-
-        // Generate JWT token
-        const token = jwt.sign(
-            { userId: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN }
-        );
-
-        res.status(200).json({
-            message: 'Login successful',
-            token,
-            user: {
-                id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                phoneNumber: user.phoneNumber,
-                email: user.email,
-                verified: user.verified,
-                dateOfBirth: user.dateOfBirth
-            }
-        });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ message: 'Login failed' });
