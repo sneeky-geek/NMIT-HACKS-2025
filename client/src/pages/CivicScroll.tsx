@@ -9,25 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { nanoid } from 'nanoid';
 
-// Array of civic sense prompts
-const CIVIC_PROMPTS = [
-  "✨ Small actions, big impact! Keep our streets clean and our hearts proud. 🌟",
-  "♻️ Every piece of waste sorted is a step towards a greener tomorrow. Make it count!",
-  "💧 Water is life. Save it like it's your superpower, because it is!",
-  "🌍 Choose public transport: Be the climate hero our planet needs!",
-  "🌳 Plant a seed of change today, grow a forest of hope tomorrow.",
-  "🏛️ Our city is our canvas, let's make it a masterpiece together.",
-  "🎵 Be the harmony in your community, not the noise.",
-  "❤️ Volunteer: Because the best way to find yourself is to serve others.",
-  "✊ Your vote is your voice. Make it echo through generations!",
-  "📱 See something? Say something! Be the change catalyst.",
-  "🌟 Clean streets reflect bright communities. Shine on!",
-  "💡 Energy saved is future earned. Be brilliant, use less!",
-  "🚦 Traffic rules are life rules. Stay safe, stay smart!",
-  "🌊 Choose planet over plastic. Every. Single. Time.",
-  "🤝 Local action, global impact. Your community needs YOU!",
-];
-
 // Stock images for civic awareness (assuming these images exist in your public folder)
 const CIVIC_IMAGES = [
   "/images/clean-environment.jpg",
@@ -47,112 +28,48 @@ const CIVIC_IMAGES = [
   "/images/local-governance.jpg",
 ];
 
-// Fallback images if the above don't exist
-const FALLBACK_IMAGES = [
-  "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b",
-  "https://images.unsplash.com/photo-1618477462146-050d2757350d",
-  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e",
-  "https://images.unsplash.com/photo-1523712999610-f77fbcfc3843",
-  "https://images.unsplash.com/photo-1470770903676-69b98201ea1c",
+// Default sample images for reels when videos aren't available
+const SAMPLE_IMAGES = [
+  "https://images.unsplash.com/photo-1534801022022-6e319a11f249?ixlib=rb-1.2.1&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=800&fit=max",
+  "https://images.unsplash.com/photo-1594035910387-fea47794261f?ixlib=rb-1.2.1&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=800&fit=max",
+  "https://images.unsplash.com/photo-1536782376847-5c9d14d97cc0?ixlib=rb-1.2.1&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=800&fit=max",
+  "https://images.unsplash.com/photo-1477772252792-a35981962ff2?ixlib=rb-1.2.1&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=800&fit=max",
+  "https://images.unsplash.com/photo-1535392432937-a27c78d140ae?ixlib=rb-1.2.1&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=800&fit=max",
+];
+
+// Videos from assets folder for reels
+const CIVIC_VIDEOS = [
+  "/videos/civic-video1.mp4",
+  "/videos/civic-video2.mp4",
+  "/videos/civic-video3.mp4",
+  "/videos/civic-video4.mp4",
+  "/videos/civic-video5.mp4",
 ];
 
 interface Reel {
   id: string;
-  message: string;
   likes: number;
   isLiked: boolean;
   media: {
     type: 'image' | 'video';
     url: string;
-    // For persisting File objects across refreshes
-    blobStorageKey?: string; // Key for retrieving from IndexedDB
-    fileName?: string;
-    fileType?: string;
+    // No longer need blobStorageKey since we're fetching from backend
   };
   soundOn: boolean;
-  userId?: string; // To identify user's own reels
+  userId: string; // To identify user's own reels
   createdAt: Date;
 }
 
-// IndexedDB setup for storing media blobs
-const DB_NAME = 'reelsDB';
-const STORE_NAME = 'mediaBlobs';
-const DB_VERSION = 1;
+// No longer need IndexedDB for storage as we're using the backend
 
-const openDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
-    request.onerror = (event) => {
-      console.error('IndexedDB error:', event);
-      reject('Error opening IndexedDB');
-    };
-    
-    request.onsuccess = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      resolve(db);
-    };
-    
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-      }
-    };
-  });
-};
-
-const storeBlob = async (blob: Blob, id: string): Promise<void> => {
-  try {
-    const db = await openDB();
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
-    
-    return new Promise((resolve, reject) => {
-      const request = store.put({ id, blob });
-      
-      request.onsuccess = () => {
-        resolve();
-      };
-      
-      request.onerror = (event) => {
-        console.error('Error storing blob:', event);
-        reject('Error storing blob');
-      };
-    });
-  } catch (error) {
-    console.error('Failed to store blob:', error);
-    throw error;
-  }
-};
-
-const getBlob = async (id: string): Promise<Blob | null> => {
-  try {
-    const db = await openDB();
-    const transaction = db.transaction([STORE_NAME], 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
-    
-    return new Promise((resolve, reject) => {
-      const request = store.get(id);
-      
-      request.onsuccess = () => {
-        const result = request.result;
-        if (result) {
-          resolve(result.blob);
-        } else {
-          resolve(null);
-        }
-      };
-      
-      request.onerror = (event) => {
-        console.error('Error getting blob:', event);
-        reject('Error getting blob');
-      };
-    });
-  } catch (error) {
-    console.error('Failed to get blob:', error);
-    return null;
-  }
+// Ensure consistent user ID across sessions
+const getUserId = () => {
+  const storedUserId = localStorage.getItem('civicReelsUserId');
+  if (storedUserId) return storedUserId;
+  
+  const newUserId = 'user_' + nanoid(8);
+  localStorage.setItem('civicReelsUserId', newUserId);
+  return newUserId;
 };
 
 const CivicScroll = () => {
@@ -163,15 +80,49 @@ const CivicScroll = () => {
   const reelContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [uploadCaption, setUploadCaption] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   
-  // Mock user ID (in a real app, this would come from auth)
-  const currentUserId = 'user123';
+  // Get consistent user ID
+  const currentUserId = useMemo(() => getUserId(), []);
 
-  // Initialize with stored reels or generate random ones
+  // Filter reels based on view mode
+  const filteredReels = useMemo(() => {
+    if (viewMode === 'my') {
+      // Only show user's uploaded reels in "My Reels"
+      return reels.filter(reel => reel.userId === currentUserId);
+    } else {
+      // Only show system reels in "All Reels"
+      return reels.filter(reel => reel.userId?.startsWith('system_'));
+    }
+  }, [reels, viewMode, currentUserId]);
+  
+  const hasMyReels = useMemo(() => {
+    return reels.some(reel => reel.userId === currentUserId);
+  }, [reels, currentUserId]);
+
+  // Auto-play videos when the current index changes
+  useEffect(() => {
+    if (filteredReels.length > 0 && filteredReels[currentIndex]?.media.type === 'video') {
+      // Find the current video element and play it
+      const videoElement = document.querySelector(`video[key="${filteredReels[currentIndex].id}"]`) as HTMLVideoElement;
+      if (videoElement) {
+        // Always mute first to ensure autoplay works
+        videoElement.muted = true;
+        
+        videoElement.play()
+          .then(() => {
+            // If user has interacted, we can unmute if the reel's soundOn is true
+            if (hasUserInteracted && filteredReels[currentIndex].soundOn) {
+              videoElement.muted = false;
+            }
+          })
+          .catch(err => console.error('Error auto-playing video on index change:', err));
+      }
+    }
+  }, [currentIndex, filteredReels, hasUserInteracted]);
+
   // Track user interaction to enable unmuted playback
   useEffect(() => {
     const handleUserInteraction = () => {
@@ -204,53 +155,36 @@ const CivicScroll = () => {
     const loadReels = async () => {
       setIsLoading(true);
       try {
-        // Try to load reels metadata from localStorage
-        const storedReels = localStorage.getItem('civicReels');
-        if (storedReels) {
-          try {
-            const parsedReels = JSON.parse(storedReels);
-            // Convert string dates back to Date objects
-            const reelsWithDates = parsedReels.map((reel: any) => ({
-              ...reel,
-              createdAt: new Date(reel.createdAt)
-            }));
-            
-            // Process each reel to restore media from IndexedDB if needed
-            const processedReels = await Promise.all(
-              reelsWithDates.map(async (reel: Reel) => {
-                // If the reel has a blobStorageKey, try to retrieve the blob from IndexedDB
-                if (reel.media.blobStorageKey) {
-                  try {
-                    const blob = await getBlob(reel.media.blobStorageKey);
-                    if (blob) {
-                      // Create a URL for the blob
-                      const url = URL.createObjectURL(blob);
-                      return {
-                        ...reel,
-                        media: {
-                          ...reel.media,
-                          url
-                        }
-                      };
-                    }
-                  } catch (error) {
-                    console.error('Error retrieving blob for reel:', reel.id, error);
-                  }
-                }
-                return reel;
-              })
-            );
-            
-            setReels(processedReels);
-            // Set view mode to 'all' initially
-            setViewMode('all');
-          } catch (error) {
-            console.error('Error parsing stored reels:', error);
-            generateInitialReels();
-          }
-        } else {
+        // Import fetchReels function from our API
+        const { fetchReels } = await import('@/api/reels');
+        
+        // Fetch system reels (no userId specified)
+        const systemReels = await fetchReels();
+        
+        // Map backend reels to frontend reel format
+        const mappedReels = systemReels.map((reel: any) => ({
+          id: reel._id,
+          likes: reel.likes,
+          isLiked: false,
+          media: {
+            type: reel.media.type,
+            url: reel.media.url,
+          },
+          soundOn: reel.soundOn,
+          userId: reel.userId,
+          createdAt: new Date(reel.createdAt)
+        }));
+        
+        // If no reels are returned from the backend, generate initial reels
+        if (mappedReels.length === 0) {
           generateInitialReels();
+        } else {
+          setReels(mappedReels);
         }
+      } catch (error) {
+        console.error('Error fetching reels from backend:', error);
+        // Fall back to generating initial reels on error
+        generateInitialReels();
       } finally {
         setIsLoading(false);
       }
@@ -287,27 +221,6 @@ const CivicScroll = () => {
     };
   }, [currentIndex, reels.length]);
 
-  // Auto-play videos when the current index changes
-  useEffect(() => {
-    if (filteredReels.length > 0 && filteredReels[currentIndex]?.media.type === 'video') {
-      // Find the current video element and play it
-      const videoElement = document.querySelector(`video[key="${filteredReels[currentIndex].id}"]`) as HTMLVideoElement;
-      if (videoElement) {
-        // Always mute first to ensure autoplay works
-        videoElement.muted = true;
-        
-        videoElement.play()
-          .then(() => {
-            // If user has interacted, we can unmute if the reel's soundOn is true
-            if (hasUserInteracted && filteredReels[currentIndex].soundOn) {
-              videoElement.muted = false;
-            }
-          })
-          .catch(err => console.error('Error auto-playing video on index change:', err));
-      }
-    }
-  }, [currentIndex, filteredReels, hasUserInteracted]);
-
   const generateInitialReels = () => {
     const initialReels = Array(5)
       .fill(null)
@@ -316,78 +229,34 @@ const CivicScroll = () => {
   };
 
   const createNewReel = (index?: number) => {
-    const promptIndex = typeof index === 'number' 
-      ? index % CIVIC_PROMPTS.length 
-      : Math.floor(Math.random() * CIVIC_PROMPTS.length);
-    
-    // Use matching image if available, otherwise use a random fallback
+    // Use image index for more reliable system reels
     const imageIndex = typeof index === 'number' 
-      ? index % CIVIC_IMAGES.length 
-      : Math.floor(Math.random() * CIVIC_IMAGES.length);
+      ? index % SAMPLE_IMAGES.length 
+      : Math.floor(Math.random() * SAMPLE_IMAGES.length);
     
-    const chooseImage = () => {
-      // If using local images, we'll provide a fallback for demo purposes
-      // In a real app, you'd ensure these images exist in your public folder
-      const useFallback = true; // Set to false if you have local images
-      return useFallback ? FALLBACK_IMAGES[imageIndex % FALLBACK_IMAGES.length] : CIVIC_IMAGES[imageIndex];
-    };
-
+    // Use sample images from Unsplash for more reliable loading
+    const imageUrl = SAMPLE_IMAGES[imageIndex];
+    
     return {
       id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
-      message: CIVIC_PROMPTS[promptIndex],
       likes: Math.floor(Math.random() * 1000),
       isLiked: false,
       media: {
         type: 'image' as const,
-        url: chooseImage()
+        url: imageUrl
       },
-      soundOn: Math.random() > 0.5,
+      soundOn: false, // No sound for images
       // Set system-generated reels to a different user ID so they don't appear in My Reels
       userId: 'system_' + Math.random().toString(36).substring(2, 9),
       createdAt: new Date()
     };
   };
 
-  // Save reels metadata to localStorage whenever they change
+  // No longer need to save reels to localStorage since we're fetching from backend
+  // We'll just keep a console log of the number of reels loaded
   useEffect(() => {
     if (reels.length > 0) {
-      try {
-        // Create a copy of reels with minimal data for localStorage
-        const reelsForStorage = reels.map(reel => ({
-          ...reel,
-          // Don't include the URL in localStorage as it could be a blob URL that won't persist
-          media: {
-            ...reel.media,
-            url: '' // Clear the URL to save space, we'll recreate it on load
-          }
-        }));
-        
-        localStorage.setItem('civicReels', JSON.stringify(reelsForStorage));
-        console.log('Reels metadata saved to localStorage:', reels.length);
-      } catch (error) {
-        console.error('Error saving reels to localStorage:', error);
-        // If localStorage is full, try to save just the most recent reels
-        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-          try {
-            // Keep only the 5 most recent reels to save space
-            const recentReels = reels.slice(0, 5).map(reel => ({
-              ...reel,
-              media: {
-                ...reel.media,
-                url: ''
-              }
-            }));
-            localStorage.setItem('civicReels', JSON.stringify(recentReels));
-            toast({
-              title: "Storage Limit Reached",
-              description: "Only the 5 most recent reels were saved",
-              variant: "destructive"
-            });
-          } catch (innerError) {
-            console.error('Failed to save even reduced reels:', innerError);
-          }
-        }
-      }
+      console.log('Reels loaded:', reels.length);
     }
   }, [reels]);
 
@@ -410,8 +279,6 @@ const CivicScroll = () => {
 
     setSelectedFile(file);
     setUploadDialogOpen(true);
-    // Generate a random caption as default
-    setUploadCaption(CIVIC_PROMPTS[Math.floor(Math.random() * CIVIC_PROMPTS.length)]);
   };
 
   const handleFileUpload = async () => {
@@ -419,36 +286,29 @@ const CivicScroll = () => {
 
     try {
       setIsLoading(true);
-      // Check if file is video or image
-      const isVideo = selectedFile.type.startsWith('video/');
       
-      // Generate a unique ID for the blob storage
-      const blobId = nanoid();
+      // Import uploadReel function from our API
+      const { uploadReel } = await import('@/api/reels');
       
-      // Store the file blob in IndexedDB
-      await storeBlob(selectedFile, blobId);
+      // Upload file to backend
+      const uploadedReel = await uploadReel(selectedFile, currentUserId);
       
-      // Create a URL for immediate display
-      const url = URL.createObjectURL(selectedFile);
-
+      // Create a new reel object from the backend response
       const newReel: Reel = {
-        id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
-        message: uploadCaption || CIVIC_PROMPTS[Math.floor(Math.random() * CIVIC_PROMPTS.length)],
-        likes: 0,
+        id: uploadedReel._id,
+        likes: uploadedReel.likes,
         isLiked: false,
         media: {
-          type: isVideo ? 'video' : 'image',
-          url: url, // Blob URL for display
-          blobStorageKey: blobId, // Key to retrieve from IndexedDB
-          fileName: selectedFile.name,
-          fileType: selectedFile.type
+          type: uploadedReel.media.type,
+          url: uploadedReel.media.url,
         },
-        soundOn: true,
-        userId: currentUserId,
-        createdAt: new Date()
+        soundOn: uploadedReel.soundOn,
+        userId: uploadedReel.userId,
+        createdAt: new Date(uploadedReel.createdAt)
       };
 
-      setReels([newReel, ...reels]);
+      // Add the new reel to the beginning of the list
+      setReels(prevReels => [newReel, ...prevReels]);
       setCurrentIndex(0);
       
       // Switch to 'my' view mode to show the uploaded reel
@@ -457,7 +317,6 @@ const CivicScroll = () => {
       // Reset state
       setSelectedFile(null);
       setUploadDialogOpen(false);
-      setUploadCaption('');
       
       // Clear file input
       if (fileInputRef.current) {
@@ -485,7 +344,6 @@ const CivicScroll = () => {
     } finally {
       setIsLoading(false);
     }
-
   };
 
   const handleCreateReel = () => {
@@ -495,36 +353,51 @@ const CivicScroll = () => {
   const handleCancelUpload = () => {
     setSelectedFile(null);
     setUploadDialogOpen(false);
-    setUploadCaption('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const filteredReels = useMemo(() => {
-    return viewMode === 'my' 
-      ? reels.filter(reel => reel.userId === currentUserId)
-      : reels;
-  }, [reels, viewMode]);
-  
-  const hasMyReels = useMemo(() => {
-    return reels.some(reel => reel.userId === currentUserId);
-  }, [reels]);
-
-  const handleLike = (id: string) => {
-    setReels(
-      reels.map((reel) =>
+  const handleLike = async (id: string) => {
+    try {
+      // First update the UI for immediate feedback
+      const updatedReels = reels.map((reel) =>
         reel.id === id
           ? { ...reel, isLiked: !reel.isLiked, likes: reel.isLiked ? reel.likes - 1 : reel.likes + 1 }
           : reel
-      )
-    );
+      );
+      
+      setReels(updatedReels);
+      
+      // Find the updated reel to get its new like count
+      const updatedReel = updatedReels.find(reel => reel.id === id);
+      
+      if (updatedReel) {
+        // Import updateReel function from our API
+        const { updateReel } = await import('@/api/reels');
+      
+        // Update the like count in the backend
+        await updateReel(id, { likes: updatedReel.likes });
+      }
+    } catch (error) {
+      console.error('Error updating likes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update likes. Please try again.",
+        variant: "destructive"
+      });
+      
+      // Revert back to original state on error
+      setReels(
+        reels.map((reel) => reel)
+      );
+    }
   };
 
-  const toggleSound = (id: string) => {
-    // Update the reel's soundOn state
-    setReels(
-      reels.map((reel) => {
+  const toggleSound = async (id: string) => {
+    try {
+      // First, update UI for immediate feedback
+      const updatedReels = reels.map((reel) => {
         if (reel.id === id) {
           const newSoundOn = !reel.soundOn;
           
@@ -552,8 +425,31 @@ const CivicScroll = () => {
           return { ...reel, soundOn: newSoundOn };
         }
         return reel;
-      })
-    );
+      });
+      
+      setReels(updatedReels);
+      
+      // Find the updated reel to get its new soundOn value
+      const updatedReel = updatedReels.find(reel => reel.id === id);
+      
+      if (updatedReel) {
+        // Import updateReel function from our API
+        const { updateReel } = await import('@/api/reels');
+        
+        // Update the soundOn setting in the backend
+        await updateReel(id, { soundOn: updatedReel.soundOn });
+      }
+    } catch (error) {
+      console.error('Error updating sound settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update sound settings. Please try again.",
+        variant: "destructive"
+      });
+      
+      // Revert back to original state on error
+      setReels([...reels]);
+    }
   };
 
   const handleShare = () => {
@@ -577,10 +473,43 @@ const CivicScroll = () => {
     }
   };
   
-  // Reset current index when view mode or filtered reels change
+  // Reset current index when view mode changes
   useEffect(() => {
     setCurrentIndex(0);
+    // When switching to 'my' view, check if there are any reels
+    if (viewMode === 'my' && filteredReels.length === 0) {
+      // No need to do anything special here, the UI already handles empty state
+    }
   }, [viewMode, filteredReels.length]);
+
+  // Additional error handler for default videos
+  useEffect(() => {
+          const errorHandler = (e: Event) => {
+      const target = e.target;
+      if (target instanceof HTMLVideoElement || target instanceof HTMLImageElement) {
+        // Check if image is from our sample sources and don't show error for those
+        if (target.src && !SAMPLE_IMAGES.some(url => target.src === url)) {
+          console.error('Media loading error:', target.src);
+          
+          if (target.src && CIVIC_VIDEOS.some(url => target.src.includes(url.split('/').pop() || ''))) {
+            const errorNotice = document.getElementById('video-error-notice');
+            if (errorNotice) {
+              errorNotice.classList.remove('hidden');
+              setTimeout(() => {
+                errorNotice.classList.add('hidden');
+              }, 5000);
+            }
+          }
+        }
+      }
+    };
+    
+    document.addEventListener('error', errorHandler, { capture: true });
+    
+    return () => {
+      document.removeEventListener('error', errorHandler, { capture: true });
+    };
+  }, []);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
@@ -596,6 +525,11 @@ const CivicScroll = () => {
             </div>
           </div>
         )}
+        
+        {/* Media error notice */}
+        <div id="video-error-notice" className="hidden fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-500/80 text-white px-4 py-2 rounded-full text-sm z-50">
+          Error loading media! Using sample images instead.
+        </div>
         
         {/* Sound permission notice - shown if not interacted yet */}
         {!hasUserInteracted && reels.length > 0 && (
@@ -613,7 +547,7 @@ const CivicScroll = () => {
                 : 'text-white hover:bg-white/10'
             }`}
           >
-            All Reels
+            System Reels
           </button>
           <button
             onClick={() => setViewMode('my')}
@@ -651,18 +585,6 @@ const CivicScroll = () => {
               </Button>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <label htmlFor="caption" className="text-sm font-medium">
-                  Caption
-                </label>
-                <Input
-                  id="caption"
-                  value={uploadCaption}
-                  onChange={(e) => setUploadCaption(e.target.value)}
-                  placeholder="Add a caption to your reel..."
-                  className="col-span-3"
-                />
-              </div>
               {selectedFile && (
                 <div className="mt-2 p-2 border rounded-md">
                   <p className="text-sm">{selectedFile.name}</p>
@@ -768,28 +690,24 @@ const CivicScroll = () => {
                     }}
                     className="absolute inset-0 flex flex-col"
                   >
-
-                    
                     {/* Content */}
                     <div className="relative z-10 flex flex-col justify-between h-full">
                       {/* Media container with proper aspect ratio */}
                       <div className="absolute inset-0 bg-black">
-                        {filteredReels[currentIndex]?.media.type === 'video' ? (
+                        {filteredReels.length > 0 && filteredReels[currentIndex]?.media.type === 'video' ? (
                           <video
-                            key={reels[currentIndex].id} // Add key to force re-render
-                            src={reels[currentIndex].media.url}
+                            key={filteredReels[currentIndex].id}
+                            src={filteredReels[currentIndex].media.url}
                             className="w-full h-full object-cover object-center"
                             autoPlay
                             loop
                             controls={false}
-                            muted={true} // Always start muted to ensure autoplay works
+                            muted={true}
                             playsInline
                             onLoadedData={(e) => {
-                              // Force play when video is loaded (always muted first)
                               const video = e.target as HTMLVideoElement;
                               video.play()
                                 .then(() => {
-                                  // Only unmute if user has interacted and the reel should have sound
                                   if (hasUserInteracted && filteredReels[currentIndex].soundOn) {
                                     video.muted = false;
                                   }
@@ -798,120 +716,27 @@ const CivicScroll = () => {
                             }}
                             onError={(e) => {
                               console.error('Video error:', e);
-                              // Try to reload the video from IndexedDB if there's an error
-                              if (filteredReels[currentIndex].media.blobStorageKey) {
-                                getBlob(reels[currentIndex].media.blobStorageKey)
-                                  .then(blob => {
-                                    if (blob) {
-                                      const videoElement = e.target as HTMLVideoElement;
-                                      const url = URL.createObjectURL(blob);
-                                      videoElement.src = url;
-                                      videoElement.load();
-                                      // Force play after reload (always muted first to ensure it works)
-                                      videoElement.muted = true;
-                                      videoElement.play()
-                                        .then(() => {
-                                          // Only unmute if user has interacted and the reel should have sound
-                                          if (hasUserInteracted && reels[currentIndex].soundOn) {
-                                            videoElement.muted = false;
-                                          }
-                                        })
-                                        .catch(err => console.error('Error playing reloaded video:', err));
-                                      // Update the reel's URL in state
-                                      setReels(currentReels => {
-                                        return currentReels.map(reel => {
-                                          if (reel.id === reels[currentIndex].id) {
-                                            return {
-                                              ...reel,
-                                              media: {
-                                                ...reel.media,
-                                                url
-                                              }
-                                            };
-                                          }
-                                          return reel;
-                                        });
-                                      });
-                                    } else {
-                                      toast({
-                                        title: "Video Error",
-                                        description: "Could not reload video from storage",
-                                        variant: "destructive"
-                                      });
-                                    }
-                                  })
-                                  .catch(error => {
-                                    console.error('Error reloading video:', error);
-                                    toast({
-                                      title: "Video Error",
-                                      description: "There was an error playing this video",
-                                      variant: "destructive"
-                                    });
-                                  });
-                              } else {
-                                toast({
-                                  title: "Video Error",
-                                  description: "There was an error playing this video",
-                                  variant: "destructive"
-                                });
-                              }
+                              toast({
+                                title: "Video Error",
+                                description: "There was an error playing this video",
+                                variant: "destructive"
+                              });
                             }}
                             style={{ objectPosition: '50% 50%' }}
                           />
                         ) : (
                           <img
-                            key={reels[currentIndex].id} // Add key to force re-render
-                            src={reels[currentIndex].media.url}
+                            key={filteredReels[currentIndex].id}
+                            src={filteredReels[currentIndex].media.url}
                             alt="Civic awareness"
                             className="w-full h-full object-cover object-center"
                             onError={(e) => {
                               console.error('Image error:', e);
-                              // Try to reload the image from IndexedDB if there's an error
-                              if (reels[currentIndex].media.blobStorageKey) {
-                                getBlob(reels[currentIndex].media.blobStorageKey)
-                                  .then(blob => {
-                                    if (blob) {
-                                      const imgElement = e.target as HTMLImageElement;
-                                      const url = URL.createObjectURL(blob);
-                                      imgElement.src = url;
-                                      // Update the reel's URL in state
-                                      setReels(currentReels => {
-                                        return currentReels.map(reel => {
-                                          if (reel.id === reels[currentIndex].id) {
-                                            return {
-                                              ...reel,
-                                              media: {
-                                                ...reel.media,
-                                                url
-                                              }
-                                            };
-                                          }
-                                          return reel;
-                                        });
-                                      });
-                                    } else {
-                                      toast({
-                                        title: "Image Error",
-                                        description: "Could not reload image from storage",
-                                        variant: "destructive"
-                                      });
-                                    }
-                                  })
-                                  .catch(error => {
-                                    console.error('Error reloading image:', error);
-                                    toast({
-                                      title: "Image Error",
-                                      description: "There was an error loading this image",
-                                      variant: "destructive"
-                                    });
-                                  });
-                              } else {
-                                toast({
-                                  title: "Image Error",
-                                  description: "There was an error loading this image",
-                                  variant: "destructive"
-                                });
-                              }
+                              toast({
+                                title: "Image Error",
+                                description: "There was an error loading this image",
+                                variant: "destructive"
+                              });
                             }}
                             style={{ objectPosition: '50% 50%' }}
                           />
@@ -920,18 +745,6 @@ const CivicScroll = () => {
                         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/90" />
                       </div>
                       
-                      {/* Message with improved positioning */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1, duration: 0.3 }}
-                        className="relative z-20 p-6 mt-auto"
-                      >
-                        <h2 className="text-white text-2xl md:text-3xl font-bold leading-snug drop-shadow-xl">
-                          {filteredReels[currentIndex].message}
-                        </h2>
-                      </motion.div>
-                    
                       {/* Right side actions - Enhanced Instagram style */}
                       <div className="absolute right-4 bottom-24 flex flex-col items-center space-y-6">
                         <div className="flex flex-col items-center space-y-1">
@@ -971,7 +784,7 @@ const CivicScroll = () => {
                       </div>
                     </div>
                   </motion.div>
-                ) : viewMode === 'my' && !hasMyReels ? (
+                ) : viewMode === 'my' && filteredReels.length === 0 ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80">
                     <div className="text-center p-6 rounded-lg">
                       <div className="mb-4 flex justify-center">

@@ -133,48 +133,10 @@ const Index = () => {
           </div>
         </section>
         
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-br from-purple-600 to-purple-700 text-white">
-          <div className="container px-4 mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <h2 className="text-3xl font-bold mb-6 font-poppins">Ready to Make a Difference?</h2>
-              <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90 font-inter">
-                Join CiviX today and start your journey toward better civic engagement and a stronger community.
-              </p>
-              <motion.button 
-                className="px-8 py-4 bg-white text-purple-700 rounded-full font-medium hover:bg-white/90 transition-all duration-300 flex items-center gap-2 mx-auto btn-hover"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Sign Up Now
-                <ArrowRight className="w-4 h-4" />
-              </motion.button>
-            </motion.div>
-          </div>
-        </section>
+       
       </main>
       
-      <footer className="py-10 border-t">
-        <div className="container px-4 mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-6 md:mb-0">
-              <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold">C</span>
-                </div>
-                <span className="font-semibold text-lg font-poppins">CiviX</span>
-              </div>
-            </div>
-            <div className="text-sm text-foreground/70 font-inter">
-              © 2025 CiviX. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </footer>
+      
     </div>
   );
 };
