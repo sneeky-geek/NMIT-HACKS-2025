@@ -47,8 +47,8 @@ const OtpVerification = () => {
       // Store token in localStorage
       localStorage.setItem('token', data.token);
       
-      // Navigate to dashboard
-      navigate('/dashboard');
+      // Navigate to home page after successful verification
+      navigate('/');
       
       toast({
         title: 'Success',
