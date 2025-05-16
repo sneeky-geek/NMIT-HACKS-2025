@@ -11,13 +11,7 @@ const connectDB = async () => {
             useUnifiedTopology: true
         });
         
-        // Drop existing users collection if it exists
-        const db = mongoose.connection.db;
-        const collections = await db.listCollections({ name: 'users' }).toArray();
-        if (collections.length > 0) {
-            await db.dropCollection('users');
-            console.log('Dropped existing users collection');
-        }
+        // Simply connect to the database without dropping collections
         
         console.log('MongoDB connected successfully');
     } catch (error) {
