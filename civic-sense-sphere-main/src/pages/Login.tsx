@@ -25,7 +25,8 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login', {
+      // Use the correct API endpoint with full URL
+      const response = await fetch('http://localhost:3000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,24 +36,35 @@ const Login = () => {
         }),
       });
 
-      const data = await response.json();
-
+      // Check if response is ok before trying to parse JSON
       if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
+        // Try to parse error message from response
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Login failed');
+        } catch (jsonError) {
+          // If JSON parsing fails, use status text
+          throw new Error(`Login failed: ${response.status} ${response.statusText}`);
+        }
       }
 
+      // Parse response data
+      const data = await response.json();
+      
       // Navigate to OTP verification with phone number
       navigate(`/verify?phone=${encodeURIComponent(phoneNumber)}`);
       
       toast({
         title: 'Success',
-        description: 'Registration successful. Please verify your phone number.',
+        description: 'OTP sent to your phone. Please verify.',
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      console.error('Login error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      setError(errorMessage);
       toast({
         title: 'Error',
-        description: error,
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -98,7 +110,7 @@ const Login = () => {
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
               New user?{' '}
-              <a href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <a href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500" onClick={() => navigate('/signup')}>
                 Sign up
               </a>
             </p>

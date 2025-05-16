@@ -3,6 +3,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Font fallback for Geist Sans */
+@font-face {
+  font-family: 'Geist Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Arial'), local('Helvetica'), local('sans-serif');
+}
+
+@font-face {
+  font-family: 'Geist Sans';
+  font-style: normal;
+  font-weight: 500;
+  src: local('Arial Bold'), local('Helvetica Bold'), local('sans-serif');
+}
+
+@font-face {
+  font-family: 'Geist Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Arial Bold'), local('Helvetica Bold'), local('sans-serif');
+}
+
+@font-face {
+  font-family: 'Geist Sans';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Arial Bold'), local('Helvetica Bold'), local('sans-serif');
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
