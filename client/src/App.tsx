@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,11 +7,11 @@ import Index from "./pages/Index";
 import CivicScroll from "./pages/CivicScroll";
 import SmartDustbin from "./pages/SmartDustbin";
 import CivicWallet from "./pages/CivicWallet";
+import Missions from "./pages/Missions";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import OtpVerification from "./pages/OtpVerification";
 import Signup from "./pages/Signup";
-import Verify from "./pages/Verify";
-import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -25,12 +24,12 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
-<Route path="/signup" element={<Signup />} />
-<Route path="/verify" element={<Verify />} />
-<Route path="/dashboard" element={<Dashboard />} />
-<Route path="/civic-scroll" element={<CivicScroll />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/verify" element={<OtpVerification />} />
+          <Route path="/civic-scroll" element={<CivicScroll />} />
           <Route path="/smart-dustbin" element={<SmartDustbin />} />
           <Route path="/civic-wallet" element={<CivicWallet />} />
+          <Route path="/missions" element={<Missions />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

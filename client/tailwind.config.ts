@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -21,6 +20,8 @@ export default {
 		extend: {
 			fontFamily: {
 				'geist': ['Geist', 'sans-serif'],
+				'inter': ['Inter', 'sans-serif'],
+				'poppins': ['Poppins', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -66,9 +67,22 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				civiBlue: '#2563EB', // Tailwind blue-600
-				civiLightBlue: '#60A5FA', // Tailwind blue-400
+				civiBlue: '#7F56D9', // Primary purple (was blue-600)
+				civiLightBlue: '#9B59B6', // Light purple (was blue-400)
 				civiDark: '#0F172A',
+				purple: {
+					50: '#F9F5FF',
+					100: '#F4EBFF',
+					200: '#E9D7FE',
+					300: '#D6BBFB',
+					400: '#B692F6',
+					500: '#9B59B6',
+					600: '#7F56D9',
+					700: '#6941C6',
+					800: '#53389E',
+					900: '#42307D',
+					950: '#2A1E51',
+				},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -112,14 +126,43 @@ export default {
 						opacity: '1'
 					}
 				},
+				'pulse': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.7' },
+				},
+				'bounce-light': {
+					'0%, 100%': { 
+						transform: 'translateY(0)',
+						animationTimingFunction: 'cubic-bezier(0.8, 0, 1, 1)',
+					},
+					'50%': {
+						transform: 'translateY(-5px)',
+						animationTimingFunction: 'cubic-bezier(0, 0, 0.2, 1)',
+					},
+				},
+				'spin-slow': {
+					'0%': { transform: 'rotate(0deg)' },
+					'100%': { transform: 'rotate(360deg)' },
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.4s ease-out',
 				'scale-in': 'scale-in 0.3s ease-out',
-			}
+				'pulse': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'bounce-light': 'bounce-light 2s ease-in-out infinite',
+				'spin-slow': 'spin-slow 8s linear infinite',
+			},
+			boxShadow: {
+				'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
+				'neo': '8px 8px 16px #d1d1d1, -8px -8px 16px #ffffff',
+				'neo-dark': '8px 8px 16px #151515, -8px -8px 16px #252525',
+			},
+			backdropBlur: {
+				xs: '2px',
+			},
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;
