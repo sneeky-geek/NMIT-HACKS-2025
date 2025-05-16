@@ -198,17 +198,26 @@ const CivicScroll = () => {
     <div className="flex flex-col h-screen overflow-hidden bg-background">
       <Navbar />
       
-      <main className="flex-1 flex justify-center items-center mt-16 mb-8 px-4">
-        <div className="flex gap-8 max-w-[900px] w-full h-[80vh] items-center">
+      <main className="flex-1 flex justify-center items-center pt-8 sm:pt-10 md:pt-14 lg:pt-14 pb-4">
+        <div className="flex max-w-[900px] w-full h-[calc(100vh-5.5rem)] sm:h-[calc(100vh-6rem)] md:h-[calc(100vh-6.5rem)] lg:h-[calc(100vh-6.5rem)] items-center justify-center px-4 relative">
           {/* Reels viewer - centered */}
-          <div className="flex-1 h-full flex items-center justify-center">
+          <div className="relative w-full max-w-[420px] h-full flex items-center justify-center">
             <div 
               ref={reelContainerRef}
-              className="relative bg-black rounded-md overflow-hidden shadow-xl h-full"
+              className="relative bg-black rounded-md overflow-hidden"
               style={{ 
-                width: "100%", 
-                maxWidth: "500px",
-                margin: "0 auto"
+                width: '100%', 
+                height: '92%', 
+                maxHeight: '90vh',
+                boxShadow: `
+                  0 0 0 2px rgba(168, 85, 247, 0.4),
+                  0 0 0 4px rgba(139, 92, 246, 0.3),
+                  0 0 0 6px rgba(124, 58, 237, 0.2),
+                  0 0 15px rgba(139, 92, 246, 0.6),
+                  0 10px 20px -5px rgba(88, 28, 135, 0.5)
+                `,
+                border: '1px solid rgba(216, 180, 254, 0.6)',
+                borderRadius: '12px'
               }}
               onTouchStart={(e) => {
                 const touchStartY = e.touches[0].clientY;
@@ -277,7 +286,7 @@ const CivicScroll = () => {
                     </div>
                     
                     {/* Right side actions - Instagram style */}
-                    <div className="absolute right-4 bottom-20 flex flex-col items-center space-y-8">
+                    <div className="absolute right-4 bottom-16 flex flex-col items-center space-y-8">
                       <div className="flex flex-col items-center">
                         <Button 
                           variant="ghost" 
@@ -319,23 +328,23 @@ const CivicScroll = () => {
             </div>
           </div>
           
-          {/* Create button on desktop - right side */}
-          <div className="hidden md:block h-full pt-4 w-[150px] self-start">
+          {/* Create button on desktop - right side (renamed and moved up) */}
+          <div className="hidden md:block absolute right-4 top-[-15px]">
             <Button
               onClick={handleCreateReel}
-              className="rounded-full bg-gradient-to-r from-purple-600 to-purple-400 hover:from-purple-700 hover:to-purple-500 text-white font-bold shadow-lg shadow-purple-500/30 border border-white/20 w-full"
+              className="rounded-full bg-gradient-to-r from-purple-600 to-purple-400 hover:from-purple-700 hover:to-purple-500 text-white font-bold shadow-lg shadow-purple-500/30 border border-white/20"
               size="default"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Create Reel
+              Upload Reel
             </Button>
           </div>
         </div>
         
-        {/* Mobile create button (visible on small screens) */}
+        {/* Mobile create button (visible on small screens) - renamed and moved up */}
         <Button
           onClick={handleCreateReel}
-          className="md:hidden fixed right-4 top-20 z-50 rounded-full bg-gradient-to-r from-purple-600 to-purple-400 hover:from-purple-700 hover:to-purple-500 text-white font-bold shadow-lg shadow-purple-500/30 border border-white/20"
+          className="md:hidden fixed right-4 top-8 sm:top-10 z-50 rounded-full bg-gradient-to-r from-purple-600 to-purple-400 hover:from-purple-700 hover:to-purple-500 text-white font-bold shadow-lg shadow-purple-500/30 border border-white/20"
           size="icon"
         >
           <Plus className="h-5 w-5" />
