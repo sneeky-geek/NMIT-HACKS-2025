@@ -43,11 +43,11 @@ export function Hero() {
       <section className="relative pt-24 pb-12 overflow-hidden">
         {/* Background elements */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute right-1/3 top-1/3 w-[500px] h-[500px] bg-purple-400/20 dark:bg-purple-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
-          <div className="absolute left-1/3 bottom-1/4 w-[400px] h-[400px] bg-purple-600/20 dark:bg-purple-600/10 rounded-full blur-3xl"></div>
-          <div className="absolute left-1/4 top-1/4 w-12 h-12 bg-purple-400 rounded-full blur-md opacity-30 animate-float"></div>
-          <div className="absolute right-1/4 bottom-1/3 w-16 h-16 bg-purple-500 rounded-full blur-md opacity-30 animate-float" style={{ animationDelay: "1s" }}></div>
-          <div className="absolute right-1/2 top-1/2 w-8 h-8 bg-purple-300 rounded-full blur-sm opacity-30 animate-float" style={{ animationDelay: "2s" }}></div>
+          <div className="absolute right-1/4 top-1/4 w-[450px] h-[450px] bg-purple-400/15 dark:bg-purple-500/8 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute left-1/4 bottom-1/3 w-[400px] h-[400px] bg-purple-600/15 dark:bg-purple-600/8 rounded-full blur-3xl"></div>
+          <div className="absolute left-1/3 top-1/3 w-10 h-10 bg-purple-400 rounded-full blur-md opacity-20 animate-float"></div>
+          <div className="absolute right-1/3 bottom-1/4 w-12 h-12 bg-purple-500 rounded-full blur-md opacity-20 animate-float" style={{ animationDelay: "1s" }}></div>
+          <div className="absolute right-1/2 top-1/2 w-8 h-8 bg-purple-300 rounded-full blur-sm opacity-20 animate-float" style={{ animationDelay: "2s" }}></div>
         </div>
         
         <div className="container px-4 mx-auto">
@@ -93,9 +93,9 @@ export function Hero() {
       <section className="relative mt-8 pt-8 pb-16 overflow-hidden">
         {/* Background elements for features section - using similar styling as hero section */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute right-1/3 bottom-1/3 w-[400px] h-[400px] bg-purple-400/15 dark:bg-purple-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute left-1/3 top-1/4 w-[350px] h-[350px] bg-purple-600/15 dark:bg-purple-600/10 rounded-full blur-3xl"></div>
-          <div className="absolute left-1/4 bottom-1/4 w-10 h-10 bg-purple-400 rounded-full blur-md opacity-20 animate-float"></div>
+          <div className="absolute right-1/4 bottom-1/4 w-[350px] h-[350px] bg-purple-400/10 dark:bg-purple-500/5 rounded-full blur-3xl"></div>
+          <div className="absolute left-1/4 top-1/3 w-[300px] h-[300px] bg-purple-600/10 dark:bg-purple-600/5 rounded-full blur-3xl"></div>
+          <div className="absolute left-1/3 bottom-1/3 w-8 h-8 bg-purple-400 rounded-full blur-md opacity-15 animate-float"></div>
         </div>
         
         <div className="container px-4 mx-auto">
