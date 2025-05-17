@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Trash2, FileText, Bookmark, BarChart3, Coins, Coffee } from "lucide-react";
 
 export function Hero() {
   return (
@@ -44,53 +44,94 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.6 }}
           >
-            <Button asChild size="lg" className="text-base rounded-full font-medium btn-hover px-8 py-6">
-              <Link to="/civic-scroll" className="flex items-center gap-2">
-                Explore CivicScroll
-                <ArrowRight className="w-4 h-4" />
+            <Button asChild size="lg" className="gap-2 group">
+              <Link to="/register">
+                Get Started
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="text-base rounded-full font-medium btn-hover border-2 px-8 py-6 hover:bg-primary/10">
-              <Link to="/smart-dustbin" className="flex items-center gap-2">
-                Try Smart Dustbin
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+            <Button asChild size="lg" variant="outline">
+              <Link to="/about">Learn More</Link>
             </Button>
+          </motion.div>
+
+          {/* Key Features */}
+          <motion.div
+            className="mt-16"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.8 }}
+          >
+            <h3 className="text-xl font-semibold mb-6 font-poppins">Key Features</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+              <motion.div 
+                className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-secondary/30 transition-colors"
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary/10 mb-3">
+                  <Trash2 className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="font-medium">QR Smart Dustbins</h4>
+              </motion.div>
+              
+              <motion.div 
+                className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-secondary/30 transition-colors"
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary/10 mb-3">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="font-medium">Fake News Analyzer</h4>
+              </motion.div>
+              
+              <motion.div 
+                className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-secondary/30 transition-colors"
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary/10 mb-3">
+                  <Bookmark className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="font-medium">Civic Scroll</h4>
+              </motion.div>
+              
+              <motion.div 
+                className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-secondary/30 transition-colors"
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary/10 mb-3">
+                  <BarChart3 className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="font-medium">Behavior Tracking & Civic Score</h4>
+              </motion.div>
+              
+              <motion.div 
+                className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-secondary/30 transition-colors"
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary/10 mb-3">
+                  <Coins className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="font-medium">Civic Coins</h4>
+              </motion.div>
+              
+              <motion.div 
+                className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-secondary/30 transition-colors"
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary/10 mb-3">
+                  <Coffee className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="font-medium">Free Food</h4>
+              </motion.div>
+            </div>
           </motion.div>
         </motion.div>
-      </div>
-
-      {/* Stats */}
-      <div className="container px-4 mx-auto mt-24">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          <motion.div 
-            className="flex flex-col items-center p-8 rounded-2xl glass-card shadow-glass hover-scale animate-reveal"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
-          >
-            <div className="text-5xl font-bold text-primary mb-2">5K+</div>
-            <div className="text-foreground/80 font-inter">Active Citizens</div>
-          </motion.div>
-          <motion.div 
-            className="flex flex-col items-center p-8 rounded-2xl glass-card shadow-glass hover-scale animate-reveal"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-          >
-            <div className="text-5xl font-bold text-primary mb-2">10K+</div>
-            <div className="text-foreground/80 font-inter">Civic Actions</div>
-          </motion.div>
-          <motion.div 
-            className="flex flex-col items-center p-8 rounded-2xl glass-card shadow-glass hover-scale animate-reveal"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.9 }}
-          >
-            <div className="text-5xl font-bold text-primary mb-2">50K+</div>
-            <div className="text-foreground/80 font-inter">Civic Coins Earned</div>
-          </motion.div>
-        </div>
       </div>
     </section>
   );
