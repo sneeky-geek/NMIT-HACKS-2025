@@ -115,11 +115,12 @@ export const mockTransactions: CivicTransaction[] = [
 ];
 
 export const civicScore = {
-  overall: 78,
+  overall: 840,
+  maxScore: 1000,
   categories: [
-    { name: "Environmental", score: 82 },
-    { name: "Community", score: 75 },
-    { name: "Information", score: 68 },
-    { name: "Public Spaces", score: 85 }
+    { name: "Environmental", score: 870 },
+    { name: "Community", score: 825 },
+    { name: "Information", score: 780 },
+    { name: "Public Spaces", score: 885 }
   ]
 };

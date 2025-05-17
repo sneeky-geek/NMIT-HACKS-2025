@@ -8,3 +8,4 @@ pytesseract
 fastapi
 uvicorn
 python-multipart
+python-telegram-bot

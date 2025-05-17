@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { civicScore, mockTransactions } from "@/components/mock-data";
-import { ArrowUp, ArrowDown, Coins, Gift, TrendingUp, Calendar, ChevronUp, ChevronDown, Award, CreditCard, Shield, ZapIcon, Sparkles } from "lucide-react";
+import { ArrowUp, ArrowDown, Coins, Gift, TrendingUp, Calendar, ChevronUp, ChevronDown, Award, CreditCard, Shield, Sparkles } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
@@ -100,6 +100,9 @@ const CivicCard = () => {
             WebkitBackfaceVisibility: "hidden"
           }}
           onClick={() => setIsFlipped(!isFlipped)}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         >
           <div className="relative flex flex-col h-full">
             {/* Header */}
@@ -195,8 +198,8 @@ const CivicCard = () => {
             </motion.div>
           </div>
         </motion.div>
-        
-        {/* Back of Card - Exact copy of front */}
+
+        {/* Back of Card */}
         <motion.div 
           className={cn(
             "absolute inset-0 w-full h-56 sm:h-64 rounded-2xl overflow-hidden",
@@ -207,8 +210,8 @@ const CivicCard = () => {
             "cursor-pointer"
           )}
           style={{ 
-            transform: "rotateY(180deg)",
-            transformStyle: "preserve-3d", 
+            transform: "rotateY(180deg)", 
+            transformStyle: "preserve-3d",
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden"
           }}
@@ -232,12 +235,10 @@ const CivicCard = () => {
               </motion.div>
             </div>
 
-            {/* Horizontal Civic Score Display */}
+            {/* Back side replicated the same as the front */}
             <div className="flex-1 flex items-center justify-center gap-4 my-1 px-2">
               <motion.div 
                 key="score-circle-back"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
                 className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 ${getScoreColor(civicScore.overall)}`}
               >
                 <span className="text-white font-bold text-lg">{civicScore.overall}</span>
@@ -254,28 +255,14 @@ const CivicCard = () => {
                     <ChevronDown className="h-3 w-3 text-red-500" />}
                 </div>
                 
-                {!scoreLoading && (
-                  <>
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 1.8 }}
-                      className="text-xs mb-1">
-                      {scoreLevel}
-                    </motion.div>
-                    
-                    <motion.div 
-                      className="w-full bg-primary/10 rounded-full overflow-hidden h-1"
-                    >
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(scoreProgress / civicScore.maxScore) * 100}%` }}
-                        transition={{ delay: 1.8, duration: 1 }}
-                        className="h-full bg-primary rounded-full"
-                      />
-                    </motion.div>
-                  </>
-                )}
+                <div className="text-xs mb-1">{scoreLevel}</div>
+                
+                <div className="w-full bg-primary/10 rounded-full overflow-hidden h-1">
+                  <div 
+                    className="h-full bg-primary rounded-full"
+                    style={{ width: `${(civicScore.overall / civicScore.maxScore) * 100}%` }}
+                  />
+                </div>
               </div>
             </div>
 
@@ -300,9 +287,6 @@ const CivicCard = () => {
             
             <motion.div 
               className="absolute bottom-3 right-5 text-xs opacity-60"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              transition={{ delay: 2 }}
             >
               Tap to flip
             </motion.div>
@@ -324,7 +308,6 @@ const CivicWallet = () => {
       
       <main className="flex-1">
         <div className="container px-4 mx-auto py-8">
-          <h1 className="text-3xl font-bold mb-8">Civic Wallet</h1>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold mb-1">Civic Wallet</h1>
@@ -432,54 +415,185 @@ const CivicWallet = () => {
             </Card>
           </div>
           
+          {/* Transaction History with Dark Mode Support */}
           <Card className="mb-8 overflow-hidden relative">
             <div className="absolute -top-6 -right-6 opacity-10">
               <CivicCoin size="lg" animate={false} />
+            </div>
+            <CardHeader>
+              <CardTitle>Transaction History</CardTitle>
+              <CardDescription>Your coin earning and spending activities</CardDescription>
+            </CardHeader>
+            <div className="px-4 pb-6">
+              <Tabs defaultValue="all">
+                <TabsList className="w-full mb-6">
+                  <TabsTrigger value="all">All Transactions</TabsTrigger>
+                  <TabsTrigger value="earned">Earned</TabsTrigger>
+                  <TabsTrigger value="spent">Spent</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="all">
+                  <div className="space-y-4">
+                    {mockTransactions.map((transaction, index) => (
+                      <motion.div 
+                        key={transaction.id} 
+                        initial={{ opacity: 0, y: 10 }} 
+                        animate={{ opacity: 1, y: 0 }} 
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-xl border relative overflow-hidden",
+                          "transition-all duration-200 hover:shadow-md",
+                          transaction.type === "earned" 
+                            ? "border-green-500/20 hover:border-green-500/30 dark:border-green-400/20 dark:hover:border-green-400/30" 
+                            : "border-red-500/20 hover:border-red-500/30 dark:border-red-400/20 dark:hover:border-red-400/30"
+                        )}
+                      >
+                        {/* Background gradient based on transaction type */}
+                        <div className={cn(
+                          "absolute inset-0 opacity-5", 
+                          transaction.type === "earned" 
+                            ? "bg-gradient-to-r from-green-300 to-green-100 dark:from-green-900/30 dark:to-green-800/10" 
+                            : "bg-gradient-to-r from-red-300 to-red-100 dark:from-red-900/30 dark:to-red-800/10"
+                        )} />
+                        
+                        <div className="flex items-center relative z-10">
+                          <div className={cn(
+                            "w-12 h-12 rounded-full flex items-center justify-center mr-4",
+                            "shadow-sm backdrop-blur-sm",
+                            transaction.type === "earned" 
+                              ? "bg-green-500/20 text-green-500 dark:bg-green-400/20 dark:text-green-400" 
+                              : "bg-red-500/20 text-red-500 dark:bg-red-400/20 dark:text-red-400"
+                          )}>
+                            {transaction.type === "earned" ? (
+                              <ArrowUp className="h-5 w-5" />
+                            ) : (
+                              <ArrowDown className="h-5 w-5" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-base">{transaction.description}</p>
+                            <div className="flex items-center text-xs text-muted-foreground mt-1">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {transaction.date}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col items-end relative z-10">
+                          <div className={cn(
+                            "font-bold text-lg",
+                            transaction.type === "earned" 
+                              ? "text-green-600 dark:text-green-400" 
+                              : "text-red-600 dark:text-red-400"
+                          )}>
+                            {transaction.type === "earned" ? "+" : "-"}{transaction.amount}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Civic Coins
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="earned">
+                  <div className="space-y-4">
+                    {mockTransactions
+                      .filter(t => t.type === "earned")
+                      .map((transaction, index) => (
+                        <motion.div 
+                          key={transaction.id} 
+                          initial={{ opacity: 0, y: 10 }} 
+                          animate={{ opacity: 1, y: 0 }} 
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className={cn(
+                            "flex items-center justify-between p-4 rounded-xl border relative overflow-hidden",
+                            "transition-all duration-200 hover:shadow-md",
+                            "border-green-500/20 hover:border-green-500/30 dark:border-green-400/20 dark:hover:border-green-400/30"
+                          )}
+                        >
+                          {/* Background gradient */}
+                          <div className="absolute inset-0 opacity-5 bg-gradient-to-r from-green-300 to-green-100 dark:from-green-900/30 dark:to-green-800/10" />
+                          
+                          <div className="flex items-center relative z-10">
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4 shadow-sm backdrop-blur-sm bg-green-500/20 text-green-500 dark:bg-green-400/20 dark:text-green-400">
+                              <ArrowUp className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-base">{transaction.description}</p>
+                              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {transaction.date}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-end relative z-10">
+                            <div className="font-bold text-lg text-green-600 dark:text-green-400">
+                              +{transaction.amount}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Civic Coins
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="spent">
+                  <div className="space-y-4">
+                    {mockTransactions
+                      .filter(t => t.type === "spent")
+                      .map((transaction, index) => (
+                        <motion.div 
+                          key={transaction.id} 
+                          initial={{ opacity: 0, y: 10 }} 
+                          animate={{ opacity: 1, y: 0 }} 
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className={cn(
+                            "flex items-center justify-between p-4 rounded-xl border relative overflow-hidden",
+                            "transition-all duration-200 hover:shadow-md",
+                            "border-red-500/20 hover:border-red-500/30 dark:border-red-400/20 dark:hover:border-red-400/30"
+                          )}
+                        >
+                          {/* Background gradient */}
+                          <div className="absolute inset-0 opacity-5 bg-gradient-to-r from-red-300 to-red-100 dark:from-red-900/30 dark:to-red-800/10" />
+                          
+                          <div className="flex items-center relative z-10">
+                            <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4 shadow-sm backdrop-blur-sm bg-red-500/20 text-red-500 dark:bg-red-400/20 dark:text-red-400">
+                              <ArrowDown className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-base">{transaction.description}</p>
+                              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {transaction.date}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-end relative z-10">
+                            <div className="font-bold text-lg text-red-600 dark:text-red-400">
+                              -{transaction.amount}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Civic Coins
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </Card>
         </div>
-      </TabsContent>
+      </main>
       
-      <TabsContent value="earned">
-        <div className="space-y-4">
-          {mockTransactions
-            .filter(t => t.type === "earned")
-            .map((transaction, index) => (
-              <motion.div 
-                key={transaction.id} 
-                initial={{ opacity: 0, y: 10 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                className={cn(
-                  "flex items-center justify-between p-4 rounded-xl border relative overflow-hidden",
-                  "transition-all duration-200 hover:shadow-md",
-                  "border-green-500/20 hover:border-green-500/30 dark:border-green-400/20 dark:hover:border-green-400/30"
-                )}
-              >
-                {/* Background gradient */}
-                <div className="absolute inset-0 opacity-5 bg-gradient-to-r from-green-300 to-green-100 dark:from-green-900/30 dark:to-green-800/10" />
-                
-                <div className="flex items-center relative z-10">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4 shadow-sm backdrop-blur-sm bg-green-500/20 text-green-500 dark:bg-green-400/20 dark:text-green-400">
-                    <ArrowUp className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-base">{transaction.description}</p>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {transaction.date}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex flex-col items-end relative z-10">
-                  <div className="font-bold text-lg text-green-600 dark:text-green-400">
-                    +{transaction.amount}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Civic Coins
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+      <footer className="py-8 border-t mt-12">
+        <div className="container px-4 mx-auto">
           <div className="text-center text-sm text-muted-foreground">
             © 2025 CiviX. All rights reserved.
           </div>
