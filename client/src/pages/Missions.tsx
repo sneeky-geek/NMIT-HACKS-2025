@@ -431,7 +431,14 @@ export default function Missions() {
   
   // Handle volunteer registration
   const handleVolunteerSubmit = async () => {
-    if (!selectedActivity) return;
+    if (!selectedActivity) {
+      toast({
+        title: "Error",
+        description: "No activity selected. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     // Additional validations
     if (!user) {
@@ -440,6 +447,7 @@ export default function Missions() {
         description: "Please login to volunteer for activities",
         variant: "destructive"
       });
+      setIsVolunteerDialogOpen(false);
       return;
     }
     
@@ -454,8 +462,11 @@ export default function Missions() {
       return;
     }
     
+    // Create safe check for volunteeredEvents array
+    const userVolunteeredEvents = Array.isArray(user.volunteeredEvents) ? user.volunteeredEvents : [];
+    
     // Check if user already volunteered
-    if (user.volunteeredEvents?.includes(selectedActivity._id) || selectedActivity.userHasVolunteered) {
+    if (userVolunteeredEvents.includes(selectedActivity._id) || selectedActivity.userHasVolunteered) {
       toast({
         title: "Already Registered",
         description: "You have already volunteered for this activity",
@@ -481,54 +492,81 @@ export default function Missions() {
     const isDemoActivity = selectedActivity._id.startsWith('demo');
     
     if (isDemoActivity) {
-      // For demo activities, simulate a successful registration
-      setTimeout(() => {
-        // Create a volunteer entry for the current user
-        const newVolunteer = {
-          userId: user?.id || 'demo-user',
-          name: volunteerForm.name,
-          phoneNumber: volunteerForm.phoneNumber,
-          joinedAt: new Date().toISOString()
-        };
-        
-        // Update the volunteer count and list in the UI for the demo activity
-        const updatedActivities = ngoActivities.map(activity => 
-          activity._id === selectedActivity._id 
-            ? { 
-                ...activity, 
-                volunteerCount: activity.volunteerCount + 1,
-                userHasVolunteered: true,
-                volunteers: [...(activity.volunteers || []), newVolunteer]
-              } 
-            : activity
-        );
-        
-        // Update state with the new activities list
-        setNgoActivities(updatedActivities);
-        
-        // Update local user object to include this activity
-        if (user && !user.volunteeredEvents?.includes(selectedActivity._id)) {
-          // Create a safe copy of volunteeredEvents array or initialize it
-          const updatedEvents = [...(user.volunteeredEvents || []), selectedActivity._id];
-          // Update the user object safely
-          user.volunteeredEvents = updatedEvents;
-        }
-        
-        setIsVolunteerDialogOpen(false);
-        
-        toast({
-          title: "Success",
-          description: "You've successfully registered as a volunteer!",
-        });
-        
+      try {
+        // For demo activities, simulate a successful registration
+        setTimeout(() => {
+          try {
+            // Create a volunteer entry for the current user
+            const newVolunteer = {
+              userId: user?.id || 'demo-user',
+              name: volunteerForm.name,
+              phoneNumber: volunteerForm.phoneNumber,
+              joinedAt: new Date().toISOString()
+            };
+            
+            // Update the volunteer count and list in the UI for the demo activity
+            // Make a deep copy of ngoActivities to avoid mutation issues
+            const updatedActivities = ngoActivities.map(activity => 
+              activity._id === selectedActivity?._id 
+                ? { 
+                    ...activity, 
+                    volunteerCount: (activity.volunteerCount || 0) + 1,
+                    userHasVolunteered: true,
+                    volunteers: [...(activity.volunteers || []), newVolunteer]
+                  } 
+                : activity
+            );
+            
+            // Update state with the new activities list
+            setNgoActivities(updatedActivities);
+            
+            // Update local user object to include this activity
+            if (user && selectedActivity) {
+              // Create a safe copy of volunteeredEvents array or initialize it
+              const currentEvents = Array.isArray(user.volunteeredEvents) ? user.volunteeredEvents : [];
+              if (!currentEvents.includes(selectedActivity._id)) {
+                // Create a new array to avoid mutation issues
+                const updatedEvents = [...currentEvents, selectedActivity._id];
+                // Update the user object safely
+                user.volunteeredEvents = updatedEvents;
+              }
+            }
+            
+            setIsVolunteerDialogOpen(false);
+            
+            toast({
+              title: "Success",
+              description: "You've successfully registered as a volunteer!",
+            });
+          } catch (error) {
+            console.error('Error in demo registration process:', error);
+            toast({
+              title: "Error",
+              description: "Failed to complete registration. Please try again.",
+              variant: "destructive"
+            });
+          } finally {
+            setLoading(false);
+          }
+        }, 800); // Simulate network delay
+      } catch (error) {
+        console.error('Error in demo mode:', error);
         setLoading(false);
-      }, 800); // Simulate network delay
-      
+        toast({
+          title: "Error",
+          description: "Something went wrong. Please try again.",
+          variant: "destructive"
+        });
+      }
       return;
     }
     
     // For real activities, make the API call
     try {
+      if (!selectedActivity || !selectedActivity._id) {
+        throw new Error('Invalid activity selected');
+      }
+
       const response = await fetch(`/api/ngo/activities/${selectedActivity._id}/volunteer`, {
         method: 'POST',
         headers: {
@@ -552,17 +590,18 @@ export default function Missions() {
           joinedAt: new Date().toISOString()
         };
         
-        // Update the volunteer count and list in the UI
-        const updatedActivities = ngoActivities.map(activity => 
-          activity._id === selectedActivity._id 
-            ? { 
-                ...activity, 
-                volunteerCount: data.volunteerCount || (activity.volunteerCount + 1),
-                userHasVolunteered: true,
-                volunteers: [...(activity.volunteers || []), newVolunteer]
-              } 
-            : activity
-        );
+        // Update the volunteer count and list in the UI - create deep copies to avoid state mutation issues
+        const updatedActivities = ngoActivities.map(activity => {
+          if (activity._id === selectedActivity._id) {
+            return { 
+              ...activity, 
+              volunteerCount: data.volunteerCount || (activity.volunteerCount + 1),
+              userHasVolunteered: true,
+              volunteers: [...(activity.volunteers || []), newVolunteer]
+            };
+          }
+          return activity;
+        });
         
         // Update state with the new activities list
         setNgoActivities(updatedActivities);
@@ -573,7 +612,8 @@ export default function Missions() {
           const currentEvents = Array.isArray(user.volunteeredEvents) ? user.volunteeredEvents : [];
           if (!currentEvents.includes(selectedActivity._id)) {
             // Create a new array instead of mutating the existing one
-            user.volunteeredEvents = [...currentEvents, selectedActivity._id];
+            const updatedEvents = [...currentEvents, selectedActivity._id];
+            user.volunteeredEvents = updatedEvents;
             
             // Optionally update tokens if the API returns that info
             if (data.totalTokens) {
@@ -582,6 +622,7 @@ export default function Missions() {
           }
         }
         
+        // Close the dialog and show success message
         setIsVolunteerDialogOpen(false);
         toast({
           title: "Success",
@@ -590,7 +631,7 @@ export default function Missions() {
       } else {
         toast({
           title: "Error",
-          description: data.message || "Failed to register",
+          description: data.message || "Failed to register as a volunteer",
           variant: "destructive"
         });
       }
@@ -835,14 +876,20 @@ export default function Missions() {
                           
                           // Set the activity before opening the dialog
                           try {
+                            // First set the selected activity
                             setSelectedActivity(activity);
-                            // Safely set volunteer form with user data if available
+                            
+                            // Then safely set volunteer form with user data if available
                             const fullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : "";
                             setVolunteerForm({
                               name: fullName,
                               phoneNumber: user?.phoneNumber || ""
                             });
-                            setIsVolunteerDialogOpen(true);
+                            
+                            // Finally open the dialog
+                            setTimeout(() => {
+                              setIsVolunteerDialogOpen(true);
+                            }, 100); // Small delay to ensure state updates properly
                           } catch (error) {
                             console.error('Error preparing volunteer form:', error);
                             toast({
