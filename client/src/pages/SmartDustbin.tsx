@@ -9,27 +9,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Html5Qrcode } from "html5-qrcode";
+import { Star } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 
 // QR Response data interface
-interface QRResponse {
+type QRResponse = {
   success: boolean;
   timestamp: string;
-  product_name?: string;
+  object?: string;
   product_type?: string;
-  estimated_value_inr?: number;
+  number_of_items?: number;
+  estimated_value?: number;
+  recyclable?: string;
+  profit_rating_out_of_10?: number;
   coinsEarned?: number;
   isValidFormat: boolean;
   rawContent?: string;
-}
+};
 
 const SmartDustbin = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
-  const [activeTab, setActiveTab] = useState("scanner");
   const [scanProgress, setScanProgress] = useState(0);
   const [qrResponse, setQrResponse] = useState<QRResponse | null>(null);
-  const [jsonCopied, setJsonCopied] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [processingQR, setProcessingQR] = useState(false);
   
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerRef = useRef<HTMLDivElement>(null);
@@ -140,43 +144,104 @@ const SmartDustbin = () => {
   }, []);
   
   const handleQrCodeSuccess = (decodedText: string) => {
-    try {
-      // Try to parse the QR code content as JSON
-      const parsedData = JSON.parse(decodedText);
-      
-      // Check if the parsed data has the expected structure
-      const isValidFormat = (
-        parsedData && 
-        typeof parsedData === 'object' &&
-        'product_name' in parsedData && 
-        'product_type' in parsedData && 
-        'estimated_value_inr' in parsedData
-      );
-      
-      if (isValidFormat) {
-        // Calculate coins earned based on estimated value
-        const estimatedValue = Number(parsedData.estimated_value_inr) || 0;
-        const coinsEarned = Math.max(1, Math.floor(estimatedValue / 100)); // 1 coin per 100 INR value, minimum 1 coin
+    // Show the processing animation before parsing
+    setProcessingQR(true);
+    setIsScanning(false);
+    
+    // Create a delay to show the animation (1.5-2s)
+    setTimeout(() => {
+      try {
+        // Try to parse the QR code content as JSON
+        let parsedData;
+        try {
+          parsedData = JSON.parse(decodedText);
+          // Log the raw QR code data
+          console.log("Raw QR code data:", decodedText);
+        } catch (e) {
+          // If the string has single quotes instead of double quotes
+          // or other formatting issues, try to fix it
+          try {
+            // Try to normalize the JSON string if needed
+            const normalizedText = decodedText.replace(/'/g, '"')
+              .replace(/([{,])\s*([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+            parsedData = JSON.parse(normalizedText);
+            console.log("Normalized QR code data:", normalizedText);
+          } catch {
+            throw new Error("Invalid JSON format");
+          }
+        }
         
-        const response: QRResponse = {
-          success: true,
-          timestamp: new Date().toISOString(),
-          product_name: parsedData.product_name,
-          product_type: parsedData.product_type,
-          estimated_value_inr: parsedData.estimated_value_inr,
-          coinsEarned: coinsEarned,
-          isValidFormat: true
-        };
+        // If parsedData is an array, get the first item
+        if (Array.isArray(parsedData)) {
+          parsedData = parsedData[0];
+        }
         
-        setQrResponse(response);
-        setScanned(true);
+        // Check if the parsed data has the expected structure for recyclable items
+        const isValidFormat = (
+          parsedData && 
+          typeof parsedData === 'object' &&
+          ('object' in parsedData || 'id' in parsedData) && 
+          'product_type' in parsedData && 
+          'recyclable' in parsedData
+        );
         
-        toast({
-          title: "QR Code Scanned Successfully!",
-          description: `You earned ${coinsEarned} Civic Coins for recycling ${parsedData.product_name}.`
-        });
-      } else {
-        // JSON format but missing required fields
+        if (isValidFormat) {
+          // Calculate coins earned based on profit rating and estimated value
+          const estimatedValue = Number(parsedData.estimated_value) || 0;
+          const profitRating = Number(parsedData.profit_rating_out_of_10) || 0;
+          const coinsEarned = Math.max(1, Math.floor((estimatedValue / 100) * (profitRating / 10) * 5)); // Coins based on value and rating
+          
+          const response: QRResponse = {
+            success: true,
+            timestamp: new Date().toISOString(),
+            object: parsedData.object,
+            product_type: parsedData.product_type,
+            number_of_items: parsedData.number_of_items,
+            estimated_value: parsedData.estimated_value,
+            recyclable: parsedData.recyclable,
+            profit_rating_out_of_10: parsedData.profit_rating_out_of_10,
+            coinsEarned: coinsEarned,
+            isValidFormat: true
+          };
+          
+          // Log the parsed response object to console
+          console.log("Parsed QR response:", response);
+          
+          setQrResponse(response);
+          setScanned(true);
+          
+          const isRecyclable = parsedData.recyclable?.toLowerCase() === 'yes';
+          
+          toast({
+            title: isRecyclable ? "Item is Recyclable! ♻️" : "Item is Not Recyclable ❌",
+            description: isRecyclable ? 
+              `You earned ${coinsEarned} Civic Coins for recycling ${parsedData.object}.` :
+              `This item cannot be recycled. Please dispose properly.`,
+            variant: isRecyclable ? "default" : "destructive"
+          });
+        } else {
+          // JSON format but missing required fields
+          const response: QRResponse = {
+            success: false,
+            timestamp: new Date().toISOString(),
+            isValidFormat: false,
+            rawContent: decodedText
+          };
+          
+          setQrResponse(response);
+          setScanned(true);
+          
+          toast({
+            title: "Invalid QR Format",
+            description: "The QR code doesn't contain the expected product information.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        // If the QR code doesn't contain valid JSON
+        console.log("Scanned non-JSON QR code:", decodedText);
+        
+        // Create a response object for invalid data
         const response: QRResponse = {
           success: false,
           timestamp: new Date().toISOString(),
@@ -188,48 +253,25 @@ const SmartDustbin = () => {
         setScanned(true);
         
         toast({
-          title: "Invalid QR Format",
-          description: "The QR code doesn't contain the expected product information.",
+          title: "No Data Found",
+          description: "The QR code does not contain valid data.",
           variant: "destructive"
         });
       }
-    } catch (error) {
-      // If the QR code doesn't contain valid JSON
-      console.log("Scanned non-JSON QR code:", decodedText);
       
-      // Create a response object for invalid data
-      const response: QRResponse = {
-        success: false,
-        timestamp: new Date().toISOString(),
-        isValidFormat: false,
-        rawContent: decodedText
-      };
-      
-      setQrResponse(response);
-      setScanned(true);
-      
-      toast({
-        title: "No Data Found",
-        description: "The QR code does not contain valid data.",
-        variant: "destructive"
-      });
-    }
+      // Hide the processing animation
+      setProcessingQR(false);
+    }, 2000); // 2 second delay for animation
   };
   
   const resetScan = () => {
     setScanned(false);
     setQrResponse(null);
-    setJsonCopied(false);
     setCameraError(null);
+    setProcessingQR(false);
   };
   
-  const copyJsonToClipboard = () => {
-    if (qrResponse) {
-      navigator.clipboard.writeText(JSON.stringify(qrResponse, null, 2));
-      setJsonCopied(true);
-      setTimeout(() => setJsonCopied(false), 2000);
-    }
-  };
+
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/5">
@@ -309,24 +351,13 @@ const SmartDustbin = () => {
             </Card>
           </motion.div>
           
-          {/* Scanner and JSON response section */}
+          {/* Scanner section */}
           <motion.div 
             className="max-w-4xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Tabs defaultValue="scanner" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="scanner" className="text-base py-3">
-                  <Camera className="mr-2 h-4 w-4" /> QR Scanner
-                </TabsTrigger>
-                <TabsTrigger value="response" className="text-base py-3" disabled={!qrResponse}>
-                  <ArrowRight className="mr-2 h-4 w-4" /> Response Data
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="scanner" className="mt-0">
                 <Card className="border-primary/10 shadow-lg bg-card/60 backdrop-blur-sm">
                   <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-poppins">QR Code Scanner</CardTitle>
@@ -358,26 +389,165 @@ const SmartDustbin = () => {
                             Point camera at QR code
                           </div>
                         </>
+                      ) : processingQR ? (
+                        <AnimatePresence>
+                          <motion.div 
+                            className="flex flex-col items-center justify-center"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                          >
+                            <motion.div 
+                              className="w-20 h-20 border-4 border-primary border-t-transparent rounded-full"
+                              animate={{ rotate: 360 }}
+                              transition={{ 
+                                duration: 1.5, 
+                                repeat: Infinity, 
+                                ease: "linear" 
+                              }}
+                            />
+                            <motion.div 
+                              className="mt-4 text-lg font-medium text-primary"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.3 }}
+                            >
+                              Processing QR...
+                            </motion.div>
+                            <motion.div 
+                              className="mt-2 text-sm text-muted-foreground"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 0.6 }}
+                            >
+                              Checking recyclability
+                            </motion.div>
+                          </motion.div>
+                        </AnimatePresence>
                       ) : scanned && qrResponse ? (
                         <div className="text-center p-4">
                           {qrResponse.isValidFormat ? (
-                            <>
-                              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
-                                <Check className="h-8 w-8 text-primary" />
-                              </div>
-                              <p className="text-xl font-semibold mb-2">Scan Successful!</p>
-                              <p className="text-2xl font-bold text-primary mb-1">+{qrResponse.coinsEarned} Coins</p>
-                              <div className="flex items-center justify-center gap-2 mt-2">
-                                <Badge variant="outline" className="bg-primary/5 text-primary">
-                                  {qrResponse.product_type}
-                                </Badge>
-                                <Badge variant="outline" className="bg-secondary/30">
-                                  ₹{qrResponse.estimated_value_inr}
-                                </Badge>
-                              </div>
-                              <p className="text-sm font-medium mt-2">{qrResponse.product_name}</p>
-                              <p className="text-sm text-muted-foreground mt-1">Thank you for your recycling effort</p>
-                            </>
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ duration: 0.5 }}
+                            >
+                              {qrResponse.recyclable?.toLowerCase() === 'yes' ? (
+                                <>
+                                  <motion.div 
+                                    className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md"
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+                                  >
+                                    <Check className="h-8 w-8 text-green-600" />
+                                  </motion.div>
+                                  <motion.p 
+                                    className="text-xl font-semibold mb-2"
+                                    initial={{ y: 10, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                  >
+                                    Recyclable
+                                  </motion.p>
+                                  <motion.p 
+                                    className="text-2xl font-bold text-primary mb-3"
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.3 }}
+                                  >
+                                    +{qrResponse.coinsEarned} Coins
+                                  </motion.p>
+                                  <motion.div 
+                                    className="flex flex-col gap-2 w-full"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.4 }}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm text-muted-foreground">Object:</span>
+                                      <span className="font-medium">{qrResponse.object}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm text-muted-foreground">Product Type:</span>
+                                      <Badge variant="outline" className="bg-primary/5 text-primary">
+                                        {qrResponse.product_type}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm text-muted-foreground">Items:</span>
+                                      <span className="font-medium">{qrResponse.number_of_items}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm text-muted-foreground">Value:</span>
+                                      <Badge variant="outline" className="bg-secondary/30">
+                                        ₹{qrResponse.estimated_value}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm text-muted-foreground">Profit Rating:</span>
+                                      <div className="flex items-center">
+                                        {Array.from({ length: 5 }).map((_, i) => (
+                                          <Star
+                                            key={i}
+                                            className={`w-4 h-4 ${i < (qrResponse.profit_rating_out_of_10 || 0) / 2 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`}
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                </>
+                              ) : (
+                                <>
+                                  <motion.div 
+                                    className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md"
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+                                  >
+                                    <X className="h-8 w-8 text-red-600" />
+                                  </motion.div>
+                                  <motion.p 
+                                    className="text-xl font-semibold mb-2 text-red-600"
+                                    initial={{ y: 10, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                  >
+                                    Not Recyclable
+                                  </motion.p>
+                                  <motion.p 
+                                    className="text-base text-muted-foreground mb-3"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.3 }}
+                                  >
+                                    This item cannot be recycled
+                                  </motion.p>
+                                  <motion.div 
+                                    className="flex flex-col gap-2 w-full"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.4 }}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm text-muted-foreground">Object:</span>
+                                      <span className="font-medium">{qrResponse.object}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm text-muted-foreground">Product Type:</span>
+                                      <Badge variant="outline" className="bg-destructive/10 text-destructive">
+                                        {qrResponse.product_type}
+                                      </Badge>
+                                    </div>
+                                    <div className="mt-2 flex justify-center">
+                                      <Button variant="outline" className="text-red-600 border-red-200">
+                                        Learn Why
+                                      </Button>
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
+                            </motion.div>
                           ) : (
                             <>
                               <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
@@ -387,14 +557,7 @@ const SmartDustbin = () => {
                               <p className="text-base text-muted-foreground mb-2">The QR code doesn't contain valid product data</p>
                             </>
                           )}
-                          <Button 
-                            variant="link" 
-                            size="sm" 
-                            onClick={() => setActiveTab("response")}
-                            className="mt-2"
-                          >
-                            View Response Data <ArrowRight className="ml-1 h-3 w-3" />
-                          </Button>
+                          
                         </div>
                       ) : (
                         <div className="text-center text-muted-foreground p-4" ref={scannerContainerRef}>
@@ -439,58 +602,6 @@ const SmartDustbin = () => {
                     )}
                   </CardFooter>
                 </Card>
-              </TabsContent>
-              
-              <TabsContent value="response" className="mt-0">
-                <Card className="border-primary/10 shadow-lg bg-card/60 backdrop-blur-sm">
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <CardTitle className="text-2xl font-poppins">QR Response Data</CardTitle>
-                        <CardDescription className="text-base">
-                          JSON response from the smart dustbin scan
-                        </CardDescription>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={copyJsonToClipboard}
-                        className="flex items-center gap-1"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                        {jsonCopied ? "Copied!" : "Copy JSON"}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {qrResponse && (
-                      <div className="relative">
-                        <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm font-mono max-h-96 overflow-y-auto">
-                          {JSON.stringify(qrResponse, null, 2)}
-                        </pre>
-                        <div className="absolute top-2 right-2 text-xs bg-primary text-primary-foreground px-2 py-1 rounded-md opacity-70">
-                          JSON
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => setActiveTab("scanner")}
-                    >
-                      Back to Scanner
-                    </Button>
-                    <Button 
-                      onClick={resetScan}
-                      variant="outline"
-                    >
-                      <RefreshCw className="mr-2 h-4 w-4" /> Scan New Code
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-            </Tabs>
           </motion.div>
         </div>
       </main>

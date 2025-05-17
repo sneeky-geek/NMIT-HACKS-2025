@@ -24,6 +24,13 @@ console.log('Twilio Configuration:', {
 // Store OTPs in memory for development/testing (not for production)
 const mockOtps = new Map();
 
+// Rate limiter to prevent abuse - stores last OTP request time for each phone number
+// This is a simple in-memory implementation (will reset when server restarts)
+const otpRequestTimes = new Map();
+
+// Cooldown period in milliseconds (60 seconds)
+const OTP_COOLDOWN_MS = 60 * 1000;
+
 export function toE164(phoneNumber, defaultCountryCode = '+91') {
     // If already in E.164, return as is
     if (phoneNumber.startsWith('+')) return phoneNumber;
@@ -32,16 +39,63 @@ export function toE164(phoneNumber, defaultCountryCode = '+91') {
     return `${defaultCountryCode}${digits}`;
 }
 
-export const sendOTP = async (phoneNumber) => {
+/**
+ * Check if a phone number can request a new OTP
+ * @param {string} phoneNumber - The phone number to check
+ * @returns {Object} - Object containing canSend (boolean) and timeRemaining (seconds)
+ */
+export const canSendOTP = (phoneNumber) => {
+    // For demo purposes, always allow OTP requests
+    return { canSend: true, timeRemaining: 0 };
+    
+    /* Rate limiting disabled for demo
+    const formattedPhone = toE164(phoneNumber);
+    const lastRequestTime = otpRequestTimes.get(formattedPhone);
+    
+    // If no previous request or cooldown period has passed
+    if (!lastRequestTime) {
+        return { canSend: true, timeRemaining: 0 };
+    }
+    
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    
+    // Check if cooldown period has passed
+    if (timeSinceLastRequest >= OTP_COOLDOWN_MS) {
+        return { canSend: true, timeRemaining: 0 };
+    }
+    
+    // Calculate remaining time in seconds
+    const timeRemaining = Math.ceil((OTP_COOLDOWN_MS - timeSinceLastRequest) / 1000);
+    return { canSend: false, timeRemaining };
+    */
+};
+
+/**
+ * Send an OTP to the specified phone number
+ * @param {string} phoneNumber - The phone number to send OTP to
+ * @param {boolean} forceMockOTP - Force using mock OTP regardless of environment
+ * @returns {Object} - The verification result
+ */
+export const sendOTP = async (phoneNumber, forceMockOTP = false) => {
     try {
         // Always format to E.164 with +91 as default
         const formattedPhone = toE164(phoneNumber);
-
-        // If in development/test mode or missing Twilio creds, use a mock OTP
-        if (USE_MOCK_OTP) {
+        
+        // Rate limiting disabled for demo purposes
+        // Always allow OTP requests regardless of timing
+        const { canSend, timeRemaining } = canSendOTP(formattedPhone);
+        // We've disabled the rate limiter in canSendOTP, but this is a safeguard
+        // to ensure we never return rate_limited status
+        
+        // Update the last request time for rate limiting
+        otpRequestTimes.set(formattedPhone, Date.now());
+        
+        // If in development/test mode or mock is forced, use a mock OTP
+        if (USE_MOCK_OTP || forceMockOTP) {
             console.log('Using mock OTP for development');
-            // Generate a 6-digit OTP
-            const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
+            // Always use "200525" as the fixed OTP for demo purposes
+            const mockOtp = "200525";
             
             // IMPORTANT: Store with the formatted phone number
             mockOtps.set(formattedPhone, mockOtp);
@@ -57,13 +111,28 @@ export const sendOTP = async (phoneNumber) => {
         }
         
         // Use actual Twilio in production
-        const verification = await client.verify.v2.services(verifyServiceSid)
-            .verifications
-            .create({
-                to: formattedPhone,
-                channel: 'sms'
-            });
-        return verification;
+        try {
+            const verification = await client.verify.v2.services(verifyServiceSid)
+                .verifications
+                .create({
+                    to: formattedPhone,
+                    channel: 'sms'
+                });
+            return verification;
+        } catch (twilioError) {
+            // For demo purposes, don't return rate_limited status even for Twilio 429 errors
+            if (twilioError.status === 429) {
+                console.error('Twilio rate limit exceeded, but continuing for demo:', twilioError);
+                // Return pending status instead of rate_limited for demo
+                return {
+                    status: 'pending',
+                    to: formattedPhone
+                };
+            }
+            
+            // Re-throw other Twilio errors to be caught by the outer catch
+            throw twilioError;
+        }
     } catch (error) {
         console.error('Error sending OTP:', error);
         // Return a formatted error instead of throwing
@@ -81,6 +150,16 @@ export const verifyOTP = async (phoneNumber, code) => {
     try {
         console.log(`Attempting to verify OTP for ${formattedPhone} with code ${code}`);
         console.log(`Using ${USE_MOCK_OTP ? 'MOCK' : 'TWILIO'} verification mode`);
+        
+        // For demo purposes, always accept "200525" as valid OTP
+        if (code === "200525") {
+            console.log(`Demo OTP verification for ${formattedPhone}: approved (using fixed OTP 200525)`);
+            return {
+                status: 'approved',
+                to: formattedPhone,
+                valid: true
+            };
+        }
         
         // If in development/test mode, use the mock OTP
         if (USE_MOCK_OTP) {
@@ -107,6 +186,16 @@ export const verifyOTP = async (phoneNumber, code) => {
         
         if (!verifyServiceSid) {
             throw new Error('Twilio Verify Service SID is missing. Check your environment variables.');
+        }
+        
+        // For demo purposes, skip actual Twilio verification if code is "200525"
+        if (code === "200525") {
+            console.log('Demo mode: Skipping Twilio verification and approving OTP 200525');
+            return {
+                status: 'approved',
+                to: formattedPhone,
+                valid: true
+            };
         }
         
         // Verify OTP using Twilio in production

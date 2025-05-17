@@ -1,5 +1,5 @@
 import User from '../models/User.js';
-import { sendOTP, verifyOTP as verifyTwilioOTP, toE164 } from '../config/twilio.js';
+import { sendOTP, verifyOTP as verifyTwilioOTP, toE164, canSendOTP } from '../config/twilio.js';
 import jwt from 'jsonwebtoken';
 
 export const register = async (req, res) => {
@@ -75,6 +75,14 @@ export const register = async (req, res) => {
             res.status(201).json({ 
                 message: 'User created successfully. OTP sent to your phone number.',
                 userId: user._id
+            });
+        } else if (otpResult.status === 'rate_limited') {
+            // OTP was rate limited but user was created
+            res.status(429).json({ 
+                message: 'User created successfully, but you need to wait before requesting an OTP.', 
+                userId: user._id,
+                error: otpResult.error,
+                timeRemaining: otpResult.timeRemaining
             });
         } else {
             // OTP failed to send but user was created
@@ -170,8 +178,16 @@ export const login = async (req, res) => {
 
         // Send OTP for login
         const otpResult = await sendOTP(formattedPhone);
+        
         if (otpResult.status === 'pending') {
             res.status(200).json({ message: 'OTP sent to your phone number.' });
+        } else if (otpResult.status === 'rate_limited') {
+            // Handle rate limiting
+            res.status(429).json({ 
+                message: 'Too many OTP requests. Please wait before trying again.',
+                error: otpResult.error,
+                timeRemaining: otpResult.timeRemaining
+            });
         } else {
             res.status(500).json({ message: 'Failed to send OTP for login.' });
         }
