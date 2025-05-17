@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useCivicCoins } from "@/contexts/CivicCoinsContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { civicScore, mockTransactions } from "@/components/mock-data";
-import { ArrowUp, ArrowDown, Coins, Gift, TrendingUp, Calendar, ChevronUp, ChevronDown, Award, CreditCard, Shield, ZapIcon, Sparkles } from "lucide-react";
+import { civicScore, mockTransactions, mockRewards, RewardCoupon } from "@/components/mock-data";
+import { ArrowUp, ArrowDown, Coins, Gift, TrendingUp, Calendar, ChevronUp, ChevronDown, Award, CreditCard, Shield, ZapIcon, Sparkles, Tag } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
@@ -15,6 +15,10 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import CivicCoin from "@/components/CivicCoin";
+import { RewardCouponCard } from "@/components/RewardCouponCard";
+import { RewardFilters } from "@/components/RewardFilters";
+import { useToast } from "@/components/ui/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 // Premium Civic Card Component
 const CivicCard = () => {
@@ -317,7 +321,8 @@ const CivicCard = () => {
 const CivicWallet = () => {
   const { user } = useAuth();
   const { theme } = useTheme();
-  const { civicCoins } = useCivicCoins(); // Use global civic coins state
+  const { civicCoins, addCoins } = useCivicCoins(); // Use global civic coins state
+  const { toast } = useToast();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -383,11 +388,36 @@ const CivicWallet = () => {
                       </div>
                       
                       <div className="grid grid-cols-2 gap-3 mt-2">
-                        <Button variant="outline" size="sm" className="flex items-center justify-center">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex items-center justify-center"
+                          onClick={() => {
+                            const rewardsSection = document.getElementById('rewards-section');
+                            if (rewardsSection) {
+                              rewardsSection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                          }}
+                        >
                           <Gift className="h-4 w-4 mr-2" />
                           Redeem Rewards
                         </Button>
-                        <Button variant="secondary" size="sm" className="flex items-center justify-center">
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          className="flex items-center justify-center"
+                          onClick={() => {
+                            // Add 500 coins when clicked
+                            addCoins(500);
+                            
+                            // Show toast notification
+                            toast({
+                              title: "Coins Added!",
+                              description: "You've earned 500 Civic Coins for your participation.",
+                              variant: "default",
+                            });
+                          }}
+                        >
                           <Sparkles className="h-4 w-4 mr-2" />
                           Earn More
                         </Button>
@@ -433,8 +463,40 @@ const CivicWallet = () => {
             </Card>
           </div>
           
-          
-          
+          {/* Rewards Section */}
+          <motion.div
+            id="rewards-section"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mb-12"
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-1 flex items-center">
+                  <Gift className="h-5 w-5 mr-2 text-primary" /> 
+                  Redeem Rewards
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  Use your Civic Coins to redeem exclusive rewards from our partners
+                </p>
+              </div>
+              
+              <Button size="sm" variant="outline" className="mt-2 sm:mt-0 flex items-center gap-1.5">
+                <Tag className="h-4 w-4" />
+                My Coupons
+              </Button>
+            </div>
+            
+            {/* Reward Filters */}
+            <RewardFiltersSection />
+            
+            {/* Featured Rewards */}
+            <FeaturedRewards />
+            
+            {/* All Rewards Grid */}
+            <AllRewardsGrid />
+          </motion.div>
 
         </div>
       </main>
@@ -449,5 +511,78 @@ const CivicWallet = () => {
     </div>
   );
 };
+
+// Reward Filters Section Component
+function RewardFiltersSection() {
+  const [activeFilter, setActiveFilter] = useState<'all' | 'shopping' | 'telecom' | 'entertainment' | 'food' | 'travel' | 'local'>('all');
+  
+  return (
+    <div className="overflow-x-auto pb-2 -mx-4 px-4">
+      <RewardFilters activeFilter={activeFilter} onFilterChange={setActiveFilter} />
+    </div>
+  );
+}
+
+// Featured Rewards Component
+function FeaturedRewards() {
+  const featuredRewards = mockRewards.filter(reward => reward.featured);
+  
+  return (
+    <div className="mb-8">
+      <h3 className="text-lg font-medium mb-4 flex items-center">
+        <Sparkles className="h-4 w-4 mr-2 text-yellow-500" />
+        Featured Deals
+      </h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {featuredRewards.map(reward => (
+          <div key={reward.id} className="h-[180px]">
+            <RewardCouponCard reward={reward} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// All Rewards Grid Component
+function AllRewardsGrid() {
+  const [activeFilter, setActiveFilter] = useState<'all' | 'shopping' | 'telecom' | 'entertainment' | 'food' | 'travel' | 'local'>('all');
+  
+  const filteredRewards = activeFilter === 'all' 
+    ? mockRewards 
+    : mockRewards.filter(reward => reward.category === activeFilter);
+  
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">All Rewards</h3>
+        <div className="flex items-center gap-2">
+          <select 
+            className="text-sm bg-background border rounded-md px-2 py-1"
+            value={activeFilter}
+            onChange={(e) => setActiveFilter(e.target.value as any)}
+          >
+            <option value="all">All Categories</option>
+            <option value="shopping">Shopping</option>
+            <option value="telecom">Telecom</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="food">Food</option>
+            <option value="travel">Travel</option>
+            <option value="local">Local Offers</option>
+          </select>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {filteredRewards.map(reward => (
+          <div key={reward.id} className="h-[180px]">
+            <RewardCouponCard reward={reward} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default CivicWallet;

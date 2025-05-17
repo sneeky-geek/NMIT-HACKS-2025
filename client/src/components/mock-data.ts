@@ -124,3 +124,140 @@ export const civicScore = {
     { name: "Public Spaces", score: 885 }
   ]
 };
+
+export interface RewardCoupon {
+  id: string;
+  brand: string;
+  brandLogo: string;
+  title: string;
+  description: string;
+  category: 'shopping' | 'telecom' | 'entertainment' | 'food' | 'travel' | 'local';
+  coinCost: number;
+  expiryDays: number;
+  discount?: string;
+  featured?: boolean;
+  bgGradient?: string;
+}
+
+export const mockRewards: RewardCoupon[] = [
+  {
+    id: "r1",
+    brand: "Amazon",
+    brandLogo: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/1024px-Amazon_logo.svg.png",
+    title: "₹200 Off on ₹1000",
+    description: "Get ₹200 off on purchases above ₹1000 on Amazon India.",
+    category: "shopping",
+    coinCost: 350,
+    expiryDays: 30,
+    discount: "20%",
+    featured: true,
+    bgGradient: "from-blue-500/20 to-blue-600/20"
+  },
+  {
+    id: "r2",
+    brand: "Jio",
+    brandLogo: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Jio_logo.svg/1200px-Jio_logo.svg.png",
+    title: "2GB Extra Data",
+    description: "Get 2GB additional data on your next recharge.",
+    category: "telecom",
+    coinCost: 200,
+    expiryDays: 15,
+    bgGradient: "from-pink-500/20 to-purple-500/20"
+  },
+  {
+    id: "r3",
+    brand: "Hotstar",
+    brandLogo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Disney%2B_Hotstar_logo.svg/1280px-Disney%2B_Hotstar_logo.svg.png",
+    title: "1 Month Premium",
+    description: "Enjoy 1 month of Disney+ Hotstar Premium subscription.",
+    category: "entertainment",
+    coinCost: 500,
+    expiryDays: 7,
+    featured: true,
+    bgGradient: "from-blue-800/20 to-blue-900/20"
+  },
+  {
+    id: "r4",
+    brand: "Swiggy",
+    brandLogo: "https://upload.wikimedia.org/wikipedia/en/thumb/1/12/Swiggy_logo.svg/1200px-Swiggy_logo.svg.png",
+    title: "₹100 Off",
+    description: "Get ₹100 off on your next food order on Swiggy.",
+    category: "food",
+    coinCost: 250,
+    expiryDays: 14,
+    discount: "Flat ₹100",
+    bgGradient: "from-orange-500/20 to-orange-600/20"
+  },
+  {
+    id: "r5",
+    brand: "Airtel",
+    brandLogo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Bharti_Airtel_Logo.svg/1024px-Bharti_Airtel_Logo.svg.png",
+    title: "10% Cashback",
+    description: "Get 10% cashback on your next mobile recharge.",
+    category: "telecom",
+    coinCost: 180,
+    expiryDays: 30,
+    discount: "10%",
+    bgGradient: "from-red-500/20 to-red-600/20"
+  },
+  {
+    id: "r6",
+    brand: "Flipkart",
+    brandLogo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Flipkart_logo.svg/1280px-Flipkart_logo.svg.png",
+    title: "₹150 Off Coupon",
+    description: "Get ₹150 off on purchases above ₹800 on Flipkart.",
+    category: "shopping",
+    coinCost: 300,
+    expiryDays: 21,
+    discount: "₹150 Off",
+    bgGradient: "from-yellow-400/20 to-blue-500/20"
+  },
+  {
+    id: "r7",
+    brand: "Spotify",
+    brandLogo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/1024px-Spotify_logo_without_text.svg.png",
+    title: "2 Weeks Premium",
+    description: "Enjoy 2 weeks of Spotify Premium subscription.",
+    category: "entertainment",
+    coinCost: 280,
+    expiryDays: 10,
+    bgGradient: "from-green-500/20 to-green-600/20"
+  },
+  {
+    id: "r8",
+    brand: "Zomato",
+    brandLogo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Zomato_logo.png/1200px-Zomato_logo.png",
+    title: "30% Off (up to ₹150)",
+    description: "Get 30% off up to ₹150 on your next food order.",
+    category: "food",
+    coinCost: 270,
+    expiryDays: 14,
+    discount: "30%",
+    featured: true,
+    bgGradient: "from-red-500/20 to-red-600/20"
+  },
+  {
+    id: "r9",
+    brand: "MakeMyTrip",
+    brandLogo: "https://imgak.mmtcdn.com/pwa_v3/pwa_hotel_assets/header/logo@2x.png",
+    title: "₹500 Off on Flights",
+    description: "Get ₹500 off on domestic flight bookings.",
+    category: "travel",
+    coinCost: 450,
+    expiryDays: 45,
+    discount: "₹500 Off",
+    bgGradient: "from-blue-400/20 to-indigo-500/20"
+  },
+  {
+    id: "r10",
+    brand: "Starbucks",
+    brandLogo: "https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png",
+    title: "Buy 1 Get 1 Free",
+    description: "Buy one coffee and get one free at Starbucks outlets.",
+    category: "local",
+    coinCost: 220,
+    expiryDays: 30,
+    discount: "BOGO",
+    bgGradient: "from-green-700/20 to-green-800/20"
+  }
+];
