@@ -110,37 +110,81 @@ export const register = async (req, res) => {
 
 export const verifyOTP = async (req, res) => {
     try {
-        const { phoneNumber: rawPhoneNumber, code } = req.body;
-        const formattedPhone = toE164(rawPhoneNumber);
+        const { phoneNumber, code } = req.body;
+        
+        // Format phone number to E.164
+        const formattedPhone = toE164(phoneNumber);
         
         console.log('Verifying OTP for phone:', formattedPhone, 'with code:', code);
         
-        // First check if the user exists
+        // Find user by phone number
         const user = await User.findOne({ phoneNumber: formattedPhone });
+        
         if (!user) {
-            return res.status(404).json({ message: 'User not found with this phone number' });
+            return res.status(404).json({ message: 'User not found' });
         }
         
-        const verification = await verifyTwilioOTP(formattedPhone, code);
-
-        if (verification.status === 'approved') {
-            const user = await User.findOne({ phoneNumber: formattedPhone });
-            if (user) {
+        // Check if we need to use the fallback verification method
+        // If user has an OTP stored in their document, use that instead of Twilio
+        if (user.otp && user.otp === code) {
+            console.log('Using fallback OTP verification method');
+            
+            // Clear the OTP from the user document
+            user.otp = undefined;
+            user.verified = true;
+            await user.save();
+            
+            // Generate JWT token
+            const token = jwt.sign(
+                { 
+                    userId: user._id,
+                    userType: user.userType // Include actual user type from database
+                }, 
+                process.env.JWT_SECRET,
+                { expiresIn: process.env.JWT_EXPIRES_IN }
+            );
+            
+            return res.status(200).json({
+                message: 'OTP verified successfully (fallback method)',
+                token,
+                user: {
+                    _id: user._id,
+                    phoneNumber: user.phoneNumber,
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    dateOfBirth: user.dateOfBirth,
+                    verified: user.verified,
+                    profile: user.profile
+                }
+            });
+        }
+        
+        // Try Twilio verification if fallback didn't work
+        try {
+            // Verify OTP with Twilio
+            const verification = await verifyTwilioOTP(formattedPhone, code);
+            
+            if (verification.status === 'approved') {
+                // Mark user as verified
                 user.verified = true;
                 await user.save();
                 
                 // Generate JWT token
                 const token = jwt.sign(
-                    { userId: user._id },
+                    { 
+                        userId: user._id,
+                        userType: user.userType // Include actual user type from database
+                    }, 
                     process.env.JWT_SECRET,
                     { expiresIn: process.env.JWT_EXPIRES_IN }
                 );
-
-                res.status(200).json({
+                
+                return res.status(200).json({
                     message: 'OTP verified successfully',
                     token,
                     user: {
-                        id: user._id,
+                        _id: user._id,
                         phoneNumber: user.phoneNumber,
                         email: user.email,
                         firstName: user.firstName,
@@ -151,30 +195,57 @@ export const verifyOTP = async (req, res) => {
                     }
                 });
             } else {
-                res.status(404).json({ message: 'User not found' });
+                res.status(400).json({ message: 'Invalid OTP' });
             }
-        } else {
-            res.status(400).json({ message: 'Invalid OTP' });
+        } catch (twilioError) {
+            console.error('Twilio verification error:', twilioError);
+            
+            // If Twilio error is about rate limiting, check if we have a stored OTP as fallback
+            if (twilioError.message && twilioError.message.includes('Too many requests') && user.otp) {
+                return res.status(400).json({ 
+                    message: 'Twilio rate limit reached. Please use the fallback OTP sent in the console.'
+                });
+            }
+            
+            res.status(400).json({ message: 'Invalid OTP or verification service unavailable' });
         }
     } catch (error) {
         console.error('OTP verification error:', error);
-        res.status(500).json({ message: 'OTP verification failed' });
+        res.status(500).json({ message: 'OTP verification failed', error: error.message });
     }
 };
 
 
 export const login = async (req, res) => {
     try {
-        const { phoneNumber: rawPhoneNumber } = req.body;
-        const formattedPhone = toE164(rawPhoneNumber);
-
-        console.log('Attempting login with formatted phone:', formattedPhone);
+        console.log('Login attempt with request body:', req.body);
+        console.log('Login request headers:', req.headers);
         
-        // Find user - use the formatted phone for consistent lookup
-        const user = await User.findOne({ phoneNumber: formattedPhone });
+        const { phoneNumber: rawPhoneNumber, userType } = req.body;
+        
+        if (!rawPhoneNumber) {
+            console.error('Login failed: No phone number provided');
+            return res.status(400).json({ message: 'Phone number is required' });
+        }
+        
+        const formattedPhone = toE164(rawPhoneNumber);
+        console.log('Attempting login with formatted phone:', formattedPhone, 'userType:', userType);
+        
+        // Try to find the user using User model
+        let user;
+        try {
+            user = await User.findOne({ phoneNumber: formattedPhone });
+            console.log('User search result:', user ? 'Found' : 'Not found');
+        } catch (dbError) {
+            console.error('Database error during user lookup:', dbError);
+        }
+        
         if (!user) {
+            console.log('User not found with phone number:', formattedPhone);
             return res.status(404).json({ message: 'User not found. Please sign up first.' });
         }
+        
+        console.log('User found:', user._id.toString());
 
         // Send OTP for login
         const otpResult = await sendOTP(formattedPhone);

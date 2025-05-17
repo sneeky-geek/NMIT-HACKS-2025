@@ -1,24 +1,34 @@
 import twilio from 'twilio';
 
-// Check if we're in development/test mode
-const USE_MOCK_OTP = process.env.NODE_ENV === 'development' || !process.env.TWILIO_VERIFY_SERVICE_SID;
+// Force mock mode for development
+const USE_MOCK_OTP = true;
 
-// Initialize Twilio client if we're not using mock
+console.log('USING MOCK OTP MODE - OTPs will be displayed in console');
+
+// Initialize Twilio client with hardcoded credentials from .env for production use
 let client;
-if (!USE_MOCK_OTP) {
-    client = twilio(
-        process.env.TWILIO_ACCOUNT_SID?.trim(),
-        process.env.TWILIO_AUTH_TOKEN?.trim()
-    );
+
+// Get credentials from environment
+const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim() || 'AC4822dd667d924dc4a9b2f979c096a206';
+const authToken = process.env.TWILIO_AUTH_TOKEN?.trim() || '453412c76782db8a90f3697d3ac923e3';
+const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID?.trim() || 'VA6ef48272825eac962a4e5c04f4717a56';
+
+try {
+    client = twilio(accountSid, authToken);
+    console.log('Twilio client initialized successfully with Account SID:', accountSid.substring(0, 5) + '...');
+    console.log('Using Verify Service SID:', verifyServiceSid.substring(0, 5) + '...');
+} catch (error) {
+    console.error('Failed to initialize Twilio client:', error.message);
+    throw new Error('Failed to initialize Twilio client. Please check your credentials.');
 }
 
-// Ensure the service SID is trimmed of any whitespace
-const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID?.trim();
+// verifyServiceSid is already declared above
 
 console.log('Twilio Configuration:', {
     useMockOTP: USE_MOCK_OTP,
     accountSid: process.env.TWILIO_ACCOUNT_SID ? `${process.env.TWILIO_ACCOUNT_SID.substring(0, 5)}...` : undefined,
-    verifySid: verifyServiceSid ? `${verifyServiceSid.substring(0, 5)}...` : undefined
+    verifySid: verifyServiceSid ? `${verifyServiceSid.substring(0, 5)}...` : undefined,
+    mode: USE_MOCK_OTP ? 'MOCK (Development)' : 'PRODUCTION'
 });
 
 // Store OTPs in memory for development/testing (not for production)

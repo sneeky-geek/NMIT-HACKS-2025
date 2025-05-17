@@ -15,6 +15,7 @@ import OtpVerification from "./pages/OtpVerification";
 import Signup from "./pages/Signup";
 import UserDashboard from "./pages/UserDashboard";
 import NgoDashboard from "./pages/NgoDashboard";
+import MyWork from "./pages/MyWork";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
@@ -78,6 +79,11 @@ const App = () => (
             <Route path="/civic-wallet" element={
               <ProtectedRoute>
                 <CivicWallet />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-work" element={
+              <ProtectedRoute userTypes={['user']}>
+                <MyWork />
               </ProtectedRoute>
             } />
             <Route path="/missions" element={

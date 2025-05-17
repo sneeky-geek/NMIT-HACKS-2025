@@ -12,14 +12,20 @@ export const verifyToken = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.userId = decoded.userId;
     
-    // Optionally check if user still exists in database
-    const user = await User.findById(decoded.userId);
-    if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+    // Get userType from token if available, otherwise fetch from database
+    if (decoded.userType) {
+      req.userType = decoded.userType;
+    } else {
+      // Fall back to database if not in token
+      const user = await User.findById(decoded.userId);
+      if (!user) {
+        return res.status(401).json({ message: 'User not found' });
+      }
+      req.userType = user.userType;
     }
     
-    // Add user type to request for role-based permissions
-    req.userType = user.userType;
+    // Log userType for debugging
+    console.log(`Auth middleware: User ${req.userId} has userType: ${req.userType}`);
     
     next();
   } catch (error) {

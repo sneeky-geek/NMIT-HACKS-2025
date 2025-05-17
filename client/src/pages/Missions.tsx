@@ -103,6 +103,7 @@ interface NGOActivity {
   }>;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
   volunteerCount: number;
+  userHasVolunteered?: boolean; // To track whether current user has volunteered
   ngo: {
     _id: string;
     organizationName: string;
@@ -233,33 +234,57 @@ export default function Missions() {
   const { user, token } = useAuth();
   const navigate = useNavigate();
   
-  // Fetch NGO activities when component mounts
+  // Fetch NGO activities when component mounts or when user data changes
   useEffect(() => {
     if (activeTab === "ngo") {
       fetchNgoActivities();
     }
-  }, [activeTab]);
+  }, [activeTab, user]); // Add user dependency to re-fetch when user data changes
   
+  // Log user type for debugging
+  useEffect(() => {
+    if (user) {
+      console.log('Current user type:', user.userType);
+    }
+  }, [user]);
+
   // Fetch activities from the API
   const fetchNgoActivities = async () => {
     setActivitiesLoading(true);
     try {
-      const response = await fetch('/api/activities', {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      });
+      // Use authorization header if user is logged in
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch('/api/ngo/activities', { headers });
+      const data = await response.json();
       
       if (response.ok) {
-        const data = await response.json();
-        setNgoActivities(data.activities);
+        // Ensure data.activities is an array before processing
+        const activities = data.activities || [];
+        if (Array.isArray(activities)) {
+          // If user is logged in, check which activities they've already volunteered for
+          if (user && user.volunteeredEvents && user.volunteeredEvents.length > 0) {
+            // Mark activities user has already volunteered for
+            activities.forEach(activity => {
+              activity.userHasVolunteered = user.volunteeredEvents.includes(activity._id);
+            });
+          }
+          setNgoActivities(activities);
+        } else {
+          console.error('API response activities is not an array:', data);
+          setNgoActivities(demoNgoActivities);
+          toast({
+            title: "Invalid Data Format",
+            description: "Received invalid data format from server. Using demo activities instead.",
+            variant: "destructive"
+          });
+        }
       } else {
-        // API fetch failed - use demo activities instead
-        console.warn('Failed to fetch NGO activities from API, using demo data');
+        // Fallback to demo data on error
         setNgoActivities(demoNgoActivities);
-        toast({
-          title: "Using Demo Activities",
-          description: "Displaying sample activities since we couldn't connect to the server",
-          variant: "default"
-        });
       }
     } catch (error) {
       console.error('Error fetching NGO activities:', error);
@@ -287,11 +312,20 @@ export default function Missions() {
   
   // Function to handle activity creation
   const handleCreateActivity = async () => {
+    // Check if user is NGO
+    if (user?.userType !== 'ngo') {
+      toast({
+        title: "Access Denied",
+        description: "Only NGOs can create activities",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Validate form
     if (!newActivity.name.trim() || !newActivity.description.trim() || 
         !newActivity.date || !newActivity.time.trim() || 
-        !newActivity.location.trim() || 
-        (user?.userType !== 'ngo' && !newActivity.organizationName.trim())) {
+        !newActivity.location.trim()) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -313,53 +347,76 @@ export default function Missions() {
     setLoading(true);
     
     try {
-      // Use the user's organization name if they are an NGO, otherwise use the provided one
-      const organizationName = user?.userType === 'ngo' && user?.ngoDetails?.organizationName 
-        ? user.ngoDetails.organizationName
-        : newActivity.organizationName;
+      // Use the user's organization name from their NGO profile
+      const organizationName = user.ngoDetails?.organizationName || '';
       
-      // For a real implementation this would call the API
-      // Since we're using a fallback mechanism, we'll create the activity locally
-      const newId = `demo${Date.now()}`;
+      // Make API call to create activity in the database
+      const response = await fetch('/api/ngo/activities', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: newActivity.name,
+          description: newActivity.description,
+          date: newActivity.date,
+          time: newActivity.time,
+          location: newActivity.location,
+          volunteersNeeded: newActivity.volunteersNeeded,
+          contact: newActivity.contact
+        })
+      });
       
-      const createdActivity: NGOActivity = {
-        _id: newId,
-        name: newActivity.name,
-        description: newActivity.description,
-        date: newActivity.date,
-        time: newActivity.time,
-        location: newActivity.location,
-        volunteersNeeded: newActivity.volunteersNeeded,
-        volunteerCount: 0,
-        status: 'upcoming',
-        ngo: {
-          _id: `ngo${Date.now()}`,
-          organizationName: organizationName,
-          contact: newActivity.contact || undefined
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Add the created activity to the activities list
+        if (data.activity) {
+          // Convert the returned activity to match our UI format
+          const createdActivity: NGOActivity = {
+            ...data.activity,
+            volunteerCount: 0,
+            ngo: {
+              _id: user?.id || data.activity.ngoId || 'unknown',
+              organizationName: organizationName,
+              contact: newActivity.contact || undefined
+            }
+          };
+          
+          // Add to activities list
+          setNgoActivities([createdActivity, ...ngoActivities]);
+        } else {
+          // Refresh the activities list
+          fetchNgoActivities();
         }
-      };
-      
-      // Add to activities list
-      setNgoActivities([createdActivity, ...ngoActivities]);
-      
-      // Reset form
-      setNewActivity({
-        name: '',
-        description: '',
-        date: '',
-        time: '',
-        location: '',
-        volunteersNeeded: 1,
-        organizationName: '',
-        contact: ''
-      });
-      
-      setIsCreateActivityDialogOpen(false);
-      
-      toast({
-        title: "Success",
-        description: "Activity created successfully!",
-      });
+        
+        // Reset form
+        setNewActivity({
+          name: '',
+          description: '',
+          date: '',
+          time: '',
+          location: '',
+          volunteersNeeded: 1,
+          organizationName: '',
+          contact: ''
+        });
+        
+        setIsCreateActivityDialogOpen(false);
+        
+        toast({
+          title: "Success",
+          description: "Activity created successfully!",
+        });
+      } else {
+        // Handle error from API
+        toast({
+          title: "Error",
+          description: data.message || "Failed to create activity",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
       console.error('Error creating activity:', error);
       toast({
@@ -375,6 +432,38 @@ export default function Missions() {
   // Handle volunteer registration
   const handleVolunteerSubmit = async () => {
     if (!selectedActivity) return;
+    
+    // Additional validations
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please login to volunteer for activities",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Verify user is not an NGO
+    if (user.userType === 'ngo') {
+      toast({
+        title: "Not Available",
+        description: "NGO users cannot register as volunteers",
+        variant: "destructive"
+      });
+      setIsVolunteerDialogOpen(false);
+      return;
+    }
+    
+    // Check if user already volunteered
+    if (user.volunteeredEvents?.includes(selectedActivity._id) || selectedActivity.userHasVolunteered) {
+      toast({
+        title: "Already Registered",
+        description: "You have already volunteered for this activity",
+        variant: "destructive"
+      });
+      setIsVolunteerDialogOpen(false);
+      return;
+    }
     
     // Validate form
     if (!volunteerForm.name.trim() || !volunteerForm.phoneNumber.trim()) {
@@ -399,12 +488,21 @@ export default function Missions() {
         // Update the volunteer count in the UI for the demo activity
         const updatedActivities = ngoActivities.map(activity => 
           activity._id === selectedActivity._id 
-            ? { ...activity, volunteerCount: activity.volunteerCount + 1 } 
+            ? { 
+                ...activity, 
+                volunteerCount: activity.volunteerCount + 1,
+                userHasVolunteered: true 
+              } 
             : activity
         );
         
         // Update state with the new activities list
         setNgoActivities(updatedActivities);
+        
+        // Update local user object to include this activity
+        if (user && !user.volunteeredEvents?.includes(selectedActivity._id)) {
+          user.volunteeredEvents = [...(user.volunteeredEvents || []), selectedActivity._id];
+        }
         
         toast({
           title: "Success",
@@ -440,15 +538,28 @@ export default function Missions() {
           description: "You've successfully registered as a volunteer!",
         });
         
-        // Update the volunteer count in the UI
+        // Update the volunteer count in the UI and mark as volunteered
         const updatedActivities = ngoActivities.map(activity => 
           activity._id === selectedActivity._id 
-            ? { ...activity, volunteerCount: data.volunteerCount } 
+            ? { 
+                ...activity, 
+                volunteerCount: data.volunteerCount,
+                userHasVolunteered: true 
+              } 
             : activity
         );
         
         // Update state with the new activities list
         setNgoActivities(updatedActivities);
+        
+        // Update local user object to include this activity
+        if (user && !user.volunteeredEvents?.includes(selectedActivity._id)) {
+          user.volunteeredEvents = [...(user.volunteeredEvents || []), selectedActivity._id];
+          // Optionally update tokens if the API returns that info
+          if (data.totalTokens) {
+            user.tokens = data.totalTokens;
+          }
+        }
       } else {
         toast({
           title: "Error",
@@ -458,23 +569,10 @@ export default function Missions() {
       }
     } catch (error) {
       console.error('Error registering as volunteer:', error);
-      
-      // As a fallback for real activities, simulate success if the API call fails
-      setIsVolunteerDialogOpen(false);
-      
-      // Update the volunteer count in the UI
-      const updatedActivities = ngoActivities.map(activity => 
-        activity._id === selectedActivity._id 
-          ? { ...activity, volunteerCount: activity.volunteerCount + 1 } 
-          : activity
-      );
-      
-      // Update state with the new activities list
-      setNgoActivities(updatedActivities);
-      
       toast({
-        title: "Success",
-        description: "You've successfully registered as a volunteer!",
+        title: "Error",
+        description: "Failed to register as volunteer. Please try again.",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -509,18 +607,20 @@ export default function Missions() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            {activeTab === "ngo" && (
+            {/* Only show create button if user is logged in */}
+            {activeTab === "ngo" && token && (
               <Button 
                 onClick={() => {
-                  if (!token) {
+                  // Check if user is NGO before allowing activity creation
+                  if (user?.userType === 'ngo') {
+                    setIsCreateActivityDialogOpen(true);
+                  } else {
                     toast({
-                      title: "Authentication Required",
-                      description: "Please login to create activities",
+                      title: "Access Denied",
+                      description: "Only NGO users can create activities",
                       variant: "destructive"
                     });
-                    return;
                   }
-                  setIsCreateActivityDialogOpen(true);
                 }}
                 variant="outline"
                 size="sm"
@@ -595,7 +695,7 @@ export default function Missions() {
                 <p className="text-muted-foreground">There are no NGO activities available at the moment.</p>
               </div>
             ) : (
-              ngoActivities.map((activity, index) => (
+              (Array.isArray(ngoActivities) ? ngoActivities : []).map((activity, index) => (
                 <motion.div
                   key={activity._id}
                   className="rounded-xl border border-border overflow-hidden bg-card shadow-sm hover:shadow-md transition-all duration-300"
@@ -609,15 +709,19 @@ export default function Missions() {
                       <div className="flex justify-between items-start">
                         <div>
                           <CardTitle className="text-xl mb-1">{activity.name}</CardTitle>
-                          <CardDescription className="text-sm">
-                            <Badge variant="outline" className="mr-2 font-normal">{activity.ngo.organizationName}</Badge>
+                          <div className="text-sm flex items-center gap-2 mt-1 mb-1">
+                            {activity.ngo && activity.ngo.organizationName ? (
+                              <Badge variant="outline" className="font-normal">{activity.ngo.organizationName}</Badge>
+                            ) : (
+                              <Badge variant="outline" className="font-normal">NGO</Badge>
+                            )}
                             <Badge variant={activity.status === 'upcoming' ? 'outline' : 
                                    activity.status === 'ongoing' ? 'default' : 
                                    activity.status === 'completed' ? 'secondary' : 'destructive'}
                             >
                               {activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
                             </Badge>
-                          </CardDescription>
+                          </div>
                         </div>
                       </div>
                     </CardHeader>
@@ -641,7 +745,7 @@ export default function Missions() {
                           <span>{activity.volunteerCount} / {activity.volunteersNeeded} volunteers</span>
                         </div>
                         
-                        {activity.ngo.contact && (
+                        {activity.ngo && activity.ngo.contact && (
                           <div className="flex items-center">
                             <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
                             <span>{activity.ngo.contact}</span>
@@ -652,9 +756,18 @@ export default function Missions() {
                     
                     <CardFooter>
                       <Button 
-                        variant="default" 
+                        variant={activity.userHasVolunteered || user?.volunteeredEvents?.includes(activity._id) ? "outline" : "default"}
                         className="w-full"
-                        disabled={activity.status !== 'upcoming' && activity.status !== 'ongoing'}
+                        disabled={
+                          // Disable if activity is not upcoming or ongoing
+                          (activity.status !== 'upcoming' && activity.status !== 'ongoing') ||
+                          // Disable if user is an NGO
+                          user?.userType === 'ngo' ||
+                          // Disable if max volunteers reached
+                          activity.volunteerCount >= activity.volunteersNeeded ||
+                          // Disable if user already volunteered for this activity
+                          activity.userHasVolunteered || user?.volunteeredEvents?.includes(activity._id)
+                        }
                         onClick={() => {
                           if (!token) {
                             toast({
@@ -664,6 +777,35 @@ export default function Missions() {
                             });
                             return;
                           }
+
+                          // Show appropriate feedback based on condition
+                          if (user?.userType === 'ngo') {
+                            toast({
+                              title: "Not Available",
+                              description: "NGO users cannot register as volunteers",
+                              variant: "destructive"
+                            });
+                            return;
+                          }
+                          
+                          if (activity.volunteerCount >= activity.volunteersNeeded) {
+                            toast({
+                              title: "Maximum Volunteers Reached",
+                              description: "This activity has reached its volunteer capacity",
+                              variant: "destructive"
+                            });
+                            return;
+                          }
+                          
+                          if (activity.userHasVolunteered || user?.volunteeredEvents?.includes(activity._id)) {
+                            toast({
+                              title: "Already Registered",
+                              description: "You have already volunteered for this activity",
+                              variant: "destructive"
+                            });
+                            return;
+                          }
+                          
                           setSelectedActivity(activity);
                           setVolunteerForm({ 
                             name: user ? `${user.firstName} ${user.lastName}` : "", 
@@ -674,6 +816,9 @@ export default function Missions() {
                       >
                         {activity.status === 'completed' ? 'Activity Completed' :
                          activity.status === 'cancelled' ? 'Activity Cancelled' :
+                         activity.userHasVolunteered || user?.volunteeredEvents?.includes(activity._id) ? 'Already Volunteered' :
+                         activity.volunteerCount >= activity.volunteersNeeded ? 'Fully Booked' :
+                         user?.userType === 'ngo' ? 'NGOs Cannot Volunteer' :
                          'Volunteer Now'}
                       </Button>
                     </CardFooter>
@@ -804,12 +949,19 @@ export default function Missions() {
             </div>
           </div>
           
-          <DialogFooter>
+          <div className="flex justify-between">
             <Button variant="outline" onClick={() => setIsCreateActivityDialogOpen(false)} disabled={loading}>Cancel</Button>
             <Button onClick={handleCreateActivity} disabled={loading}>
-              {loading ? 'Creating...' : 'Create Activity'}
+              {loading ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent"></span>
+                  Creating...
+                </>
+              ) : (
+                'Create Activity'
+              )}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
       

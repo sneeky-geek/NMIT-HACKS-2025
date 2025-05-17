@@ -4,12 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { CheckCircle2, Building2 } from 'lucide-react';
 
 const Signup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  // Track user type selection
+  const [userType, setUserType] = useState('user'); // 'user' for volunteer, 'ngo' for NGO
+  
   const [formData, setFormData] = useState({
+    // Common fields
     firstName: '',
     lastName: '',
     phoneNumber: '',
@@ -18,15 +25,28 @@ const Signup = () => {
     address: '',
     city: '',
     state: '',
-    pincode: ''
+    pincode: '',
+    // NGO-specific fields
+    organizationName: '',
+    registrationNumber: '',
+    website: '',
+    description: '',
+    causeAreas: ''
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle input changes including textareas
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  // Handle user type change
+  const handleUserTypeChange = (value: string) => {
+    setUserType(value);
+    console.log('User type changed to:', value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,22 +62,51 @@ const Signup = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/register', {
+      // Choose the appropriate API endpoint based on user type
+      const endpoint = userType === 'ngo' 
+        ? 'http://localhost:3000/api/auth/register-ngo'
+        : 'http://localhost:3000/api/auth/register';
+      
+      console.log(`Registering as ${userType} using endpoint:`, endpoint);
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phoneNumber: formData.phoneNumber,
-          email: formData.email,
-          dateOfBirth: formData.dateOfBirth,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          pincode: formData.pincode
-        }),
+        body: JSON.stringify(
+          userType === 'ngo' 
+            ? {
+                // Include NGO-specific fields
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                phoneNumber: formData.phoneNumber,
+                email: formData.email,
+                dateOfBirth: formData.dateOfBirth,
+                address: formData.address,
+                city: formData.city,
+                state: formData.state,
+                pincode: formData.pincode,
+                // NGO specific details
+                organizationName: formData.organizationName,
+                registrationNumber: formData.registrationNumber,
+                website: formData.website,
+                description: formData.description,
+                causeAreas: formData.causeAreas ? formData.causeAreas.split(',').map(area => area.trim()) : []
+              }
+            : {
+                // Standard user fields
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                phoneNumber: formData.phoneNumber,
+                email: formData.email,
+                dateOfBirth: formData.dateOfBirth,
+                address: formData.address,
+                city: formData.city,
+                state: formData.state,
+                pincode: formData.pincode
+              }
+        ),
       });
 
       const data = await response.json();
@@ -66,8 +115,8 @@ const Signup = () => {
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Navigate to OTP verification with phone number
-      navigate(`/verify?phone=${encodeURIComponent(formData.phoneNumber)}`);
+      // Navigate to OTP verification with phone number and user type
+      navigate(`/verify?phone=${encodeURIComponent(formData.phoneNumber)}&userType=${userType}`);
       
       toast({
         title: 'Success',
@@ -95,6 +144,37 @@ const Signup = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* User Type Selection Tabs */}
+          <Tabs defaultValue="user" className="mb-6" onValueChange={handleUserTypeChange}>
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="user" className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Volunteer</span>
+              </TabsTrigger>
+              <TabsTrigger value="ngo" className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                <span>NGO</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="user" className="mt-0">
+              <div className="rounded-lg bg-muted/50 p-4 mb-4">
+                <h3 className="font-medium mb-2">Volunteer Account</h3>
+                <p className="text-sm text-muted-foreground">
+                  Register as a volunteer to participate in community activities, earn civic points, and track your impact.
+                </p>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="ngo" className="mt-0">
+              <div className="rounded-lg bg-muted/50 p-4 mb-4">
+                <h3 className="font-medium mb-2">NGO Account</h3>
+                <p className="text-sm text-muted-foreground">
+                  Register as an NGO to create activities, manage volunteers, and connect with the community.
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -237,12 +317,92 @@ const Signup = () => {
               <p className="text-red-600 text-sm">{error}</p>
             )}
 
+            {/* NGO-specific fields that only show when NGO is selected */}
+            {userType === 'ngo' && (
+              <div className="space-y-6 mt-6 pt-6 border-t border-gray-200">
+                <h3 className="font-medium">NGO Details</h3>
+                
+                <div>
+                  <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700">
+                    Organization Name*
+                  </label>
+                  <Input
+                    id="organizationName"
+                    name="organizationName"
+                    type="text"
+                    required
+                    value={formData.organizationName}
+                    onChange={handleChange}
+                    className="mt-1 block w-full"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="registrationNumber" className="block text-sm font-medium text-gray-700">
+                    Registration Number
+                  </label>
+                  <Input
+                    id="registrationNumber"
+                    name="registrationNumber"
+                    type="text"
+                    value={formData.registrationNumber}
+                    onChange={handleChange}
+                    className="mt-1 block w-full"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="website" className="block text-sm font-medium text-gray-700">
+                    Website
+                  </label>
+                  <Input
+                    id="website"
+                    name="website"
+                    type="url"
+                    value={formData.website}
+                    onChange={handleChange}
+                    className="mt-1 block w-full"
+                    placeholder="https://example.org"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                    Description*
+                  </label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    required
+                    value={formData.description}
+                    onChange={handleChange}
+                    className="mt-1 block w-full"
+                    placeholder="Tell us about your organization and its mission"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="causeAreas" className="block text-sm font-medium text-gray-700">
+                    Cause Areas
+                  </label>
+                  <Textarea
+                    id="causeAreas"
+                    name="causeAreas"
+                    value={formData.causeAreas}
+                    onChange={handleChange}
+                    className="mt-1 block w-full"
+                    placeholder="Environment, Education, Health (comma separated)"
+                  />
+                </div>
+              </div>
+            )}
+            
             <Button 
               type="submit" 
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-md py-2 px-4"
               disabled={loading}
             >
-              {loading ? 'Registering...' : 'Register'}
+              {loading ? 'Registering...' : `Register as ${userType === 'ngo' ? 'NGO' : 'Volunteer'}`}
             </Button>
           </form>
         </CardContent>

@@ -1,6 +1,11 @@
-const multer = require('multer');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+import multer from 'multer';
+import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { fileURLToPath } from 'url';
+
+// Get directory name (equivalent to __dirname in CommonJS)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configure multer storage
 const storage = multer.diskStorage({
@@ -34,4 +39,4 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-module.exports = upload; 
+export default upload;

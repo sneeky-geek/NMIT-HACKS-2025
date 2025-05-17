@@ -57,9 +57,26 @@ const NgoDashboard = () => {
   const [isViewVolunteersOpen, setIsViewVolunteersOpen] = useState(false);
 
   // Fetch NGO's activities
+  // Debug user information when component mounts
+  useEffect(() => {
+    if (user) {
+      console.log('NgoDashboard - Current user:', {
+        id: user.id,
+        firstName: user.firstName, 
+        lastName: user.lastName,
+        userType: user.userType,
+        ngoDetails: user.ngoDetails
+      });
+    } else {
+      console.log('NgoDashboard - No user data available');
+    }
+  }, [user]);
+
   useEffect(() => {
     const fetchActivities = async () => {
       try {
+        console.log('Fetching NGO activities with token:', token ? 'Token exists' : 'No token');
+        
         const response = await fetch('/api/ngo/my-activities', {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -96,6 +113,9 @@ const NgoDashboard = () => {
   // Handle creating a new activity
   const handleCreateActivity = async () => {
     try {
+      console.log('Creating new activity:', newActivity);
+      console.log('User type:', user?.userType);
+      
       const response = await fetch('/api/ngo/activities', {
         method: 'POST',
         headers: {
@@ -104,6 +124,8 @@ const NgoDashboard = () => {
         },
         body: JSON.stringify(newActivity)
       });
+      
+      console.log('Create activity response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
@@ -278,7 +300,7 @@ const NgoDashboard = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-xl">{activity.name}</CardTitle>
-                        <CardDescription className="mt-1">
+                        <div className="mt-1">
                           <Badge variant={
                             activity.status === 'upcoming' ? 'outline' :
                             activity.status === 'ongoing' ? 'default' :
@@ -286,7 +308,7 @@ const NgoDashboard = () => {
                           }>
                             {activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
                           </Badge>
-                        </CardDescription>
+                        </div>
                       </div>
                     </div>
                   </CardHeader>

@@ -48,6 +48,14 @@ const userSchema = new mongoose.Schema({
         state: { type: String, required: false },
         pincode: { type: String, required: false }
     },
+    tokens: {
+        type: Number,
+        default: 0
+    },
+    volunteeredEvents: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'NgoActivity'
+    }],
     ngoDetails: {
         organizationName: { type: String },
         registrationNumber: { type: String },

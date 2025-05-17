@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const ReelSchema = new mongoose.Schema({
   userId: {
@@ -29,16 +29,24 @@ const ReelSchema = new mongoose.Schema({
       required: true
     }
   },
+  description: {
+    type: String,
+    default: ''
+  },
   likes: {
     type: Number,
     default: 0
   },
-  soundOn: {
-    type: Boolean,
-    default: true
+  shares: {
+    type: Number,
+    default: 0
   },
-}, { 
-  timestamps: true 
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-module.exports = mongoose.model('Reel', ReelSchema); 
+const Reel = mongoose.model('Reel', ReelSchema);
+
+export default Reel;

@@ -8,19 +8,21 @@ import {
   updateActivityStatus,
   getActivityVolunteers
 } from '../controllers/ngoController.js';
-import { verifyToken } from '../middleware/authMiddleware.js';
+import { verifyToken, isNGO } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Public routes
-router.get('/activities', getActivities);
+// Public routes (with optional auth for showing volunteer status)
+router.get('/activities', verifyToken, getActivities);
 router.get('/activities/:id', getActivityDetails);
 
-// Protected routes (require authentication)
-router.post('/activities', verifyToken, createActivity);
-router.get('/my-activities', verifyToken, getMyActivities);
+// User routes (require authentication)
 router.post('/activities/:activityId/volunteer', verifyToken, registerVolunteer);
-router.put('/activities/:id/status', verifyToken, updateActivityStatus);
-router.get('/activities/:id/volunteers', verifyToken, getActivityVolunteers);
+
+// NGO-only routes (require authentication + NGO role)
+router.post('/activities', verifyToken, isNGO, createActivity);
+router.get('/my-activities', verifyToken, isNGO, getMyActivities);
+router.put('/activities/:id/status', verifyToken, isNGO, updateActivityStatus);
+router.get('/activities/:id/volunteers', verifyToken, isNGO, getActivityVolunteers);
 
 export default router;

@@ -1,5 +1,8 @@
 // API calls for reels
-const API_URL = 'http://localhost:5000/api';
+import { processReelsMedia } from '../utils/mediaUtils';
+
+const BASE_URL = 'http://localhost:3000';
+const API_URL = `${BASE_URL}/api`;
 
 /**
  * Fetch all reels or filter by userId

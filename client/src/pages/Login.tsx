@@ -15,6 +15,7 @@ const Login = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fallbackOtp, setFallbackOtp] = useState('');
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,12 +56,25 @@ const Login = () => {
       // Parse response data
       const data = await response.json();
       
-      // Navigate to OTP verification with phone number and user type
-      navigate(`/verify?phone=${encodeURIComponent(phoneNumber)}&userType=${userType}`);
+      // Check if we're in fallback mode
+      if (data.fallbackMode && data.devOtp) {
+        setFallbackOtp(data.devOtp);
+        
+        toast({
+          title: 'Fallback OTP Mode',
+          description: 'Due to high traffic, please use the code displayed below.',
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: 'OTP sent to your phone. Please verify.',
+        });
+      }
       
-      toast({
-        title: 'Success',
-        description: 'OTP sent to your phone. Please verify.',
+      // Navigate to OTP verification with phone number and user type
+      navigate(`/verify?phone=${encodeURIComponent(phoneNumber)}&userType=${userType}`, {
+        state: { fallbackOtp: data.devOtp || '' }
       });
     } catch (err) {
       console.error('Login error:', err);

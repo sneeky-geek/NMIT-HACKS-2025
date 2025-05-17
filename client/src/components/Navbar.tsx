@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Home, Scroll, Trash2, Wallet, LogIn, LogOut, Trophy, User, SearchCheck } from "lucide-react";
+import { Menu, X, Home, Scroll, Trash2, Wallet, LogIn, LogOut, Trophy, User, SearchCheck, Briefcase, Coins } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,9 +18,43 @@ import {
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [userTokens, setUserTokens] = useState<number | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
+  
+  // Fetch user tokens when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // If tokens are available in user object, use them
+      if (user.tokens !== undefined) {
+        setUserTokens(user.tokens);
+      } else {
+        // Otherwise fetch from API
+        const fetchTokens = async () => {
+          try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            
+            const response = await fetch('http://localhost:3000/api/tokens/balance', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              setUserTokens(data.tokens);
+            }
+          } catch (error) {
+            console.error('Error fetching tokens:', error);
+          }
+        };
+        
+        fetchTokens();
+      }
+    }
+  }, [isAuthenticated, user]);
 
   // Add scroll effect
   useEffect(() => {
@@ -98,18 +132,61 @@ export function Navbar() {
           <ThemeToggle />
           
           {isAuthenticated ? (
-            <div className="hidden md:flex">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+            <>
+              {/* Token display for authenticated users */}
+              {user?.userType === 'user' && (
+                <div className="hidden md:flex items-center mr-2">
+                  <div className="bg-amber-100 dark:bg-amber-950 rounded-full px-3 py-0.5 flex items-center gap-1 shadow-sm border border-amber-200 dark:border-amber-900">
+                    <Coins className="h-3.5 w-3.5 text-amber-600 dark:text-amber-500" />
+                    <span className="text-amber-700 dark:text-amber-400 text-sm font-medium">
+                      {userTokens !== null ? userTokens : '...'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* My Work icon for users who have volunteered */}
+              {user?.userType === 'user' && user?.volunteeredEvents && user.volunteeredEvents.length > 0 && (
+                <div className="hidden md:block mr-2">
                   <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="font-medium px-4 rounded-full shadow-sm transition-all duration-300 hover:shadow-md hover:scale-105 flex items-center gap-1.5"
+                    size="sm"
+                    variant="ghost"
+                    className="w-8 h-8 p-0 rounded-full"
+                    onClick={() => navigate('/my-work')}
+                    title="My Volunteering Work"
                   >
-                    <User className="w-4 h-4" />
-                    <span>{user?.firstName || 'Account'}</span>
+                    <Briefcase className="h-4 w-4" />
                   </Button>
-                </DropdownMenuTrigger>
+                </div>
+              )}
+              
+              {/* My Dashboard button for NGO users */}
+              {user?.userType === 'ngo' && (
+                <div className="hidden md:block mr-2">
+                  <Button 
+                    size="sm"
+                    variant="secondary"
+                    className="flex items-center gap-1.5 font-medium px-4 rounded-full shadow-sm hover:shadow-md"
+                    onClick={() => navigate('/ngo-dashboard')}
+                  >
+                    <Briefcase className="h-4 w-4" />
+                    <span>My Dashboard</span>
+                  </Button>
+                </div>
+              )}
+
+              <div className="hidden md:flex">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="font-medium px-4 rounded-full shadow-sm transition-all duration-300 hover:shadow-md hover:scale-105 flex items-center gap-1.5"
+                    >
+                      <User className="w-4 h-4" />
+                      <span>{user?.firstName || 'Account'}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>
                     {user?.userType === 'ngo' ? 'NGO Account' : 'User Account'}
@@ -117,6 +194,14 @@ export function Navbar() {
                   <DropdownMenuItem onClick={() => navigate(user?.userType === 'ngo' ? '/ngo-dashboard' : '/dashboard')}>
                     Dashboard
                   </DropdownMenuItem>
+                  
+                  {/* Only show My Work for regular users */}
+                  {user?.userType === 'user' && (
+                    <DropdownMenuItem onClick={() => navigate('/my-work')}>
+                      <Briefcase className="w-4 h-4 mr-2" /> My Work
+                    </DropdownMenuItem>
+                  )}
+                  
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => {
                     logout();
@@ -126,7 +211,8 @@ export function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
+              </div>
+            </>
           ) : (
             <Link to="/login" className="hidden md:flex">
               <Button 

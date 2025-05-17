@@ -8,6 +8,8 @@ interface User {
   phoneNumber: string;
   userType: 'user' | 'ngo';
   verified: boolean;
+  tokens?: number;
+  volunteeredEvents?: string[];
   profile?: {
     address?: string;
     city?: string;

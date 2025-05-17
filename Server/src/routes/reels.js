@@ -1,13 +1,14 @@
-const express = require('express');
+import express from 'express';
+import upload from '../middleware/upload.js';
+import { 
+  uploadReel, 
+  getReels, 
+  getReel, 
+  updateReel, 
+  deleteReel 
+} from '../controllers/reelController.js';
+
 const router = express.Router();
-const upload = require('../middleware/upload');
-const {
-  uploadReel,
-  getReels,
-  getReel,
-  updateReel,
-  deleteReel
-} = require('../controllers/reelController');
 
 // Upload a new reel and get all reels
 router.route('/')
@@ -20,4 +21,4 @@ router.route('/:id')
   .put(updateReel)
   .delete(deleteReel);
 
-module.exports = router; 
+export default router;

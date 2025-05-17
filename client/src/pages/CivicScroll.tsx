@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import MediaDisplay from "@/components/MediaDisplay";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Volume2, Share, Plus, VolumeX, X, ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -179,22 +180,31 @@ const CivicScroll = () => {
         // Fetch system reels (no userId specified)
         const systemReels = await fetchReels();
         
+        // Log received reels for debugging
+        console.log('Reels from backend:', systemReels);
+        
         // Map backend reels to frontend reel format
         const mappedReels = systemReels.map((reel: any) => ({
           id: reel._id,
-          likes: reel.likes,
+          likes: reel.likes || 0,
           isLiked: false,
           media: {
-            type: reel.media.type,
-            url: reel.media.url,
+            type: reel.media.type as 'image' | 'video',
+            // Convert backend filePath to frontend URL
+            url: reel.media.filePath.startsWith('http') 
+              ? reel.media.filePath 
+              : `${window.location.origin}/uploads/${reel.media.fileName}`
           },
-          soundOn: reel.soundOn,
+          soundOn: reel.media.type === 'video',
           userId: reel.userId,
           createdAt: new Date(reel.createdAt)
         }));
         
+        console.log('Mapped reels for frontend:', mappedReels);
+        
         // If no reels are returned from the backend, generate initial reels
         if (mappedReels.length === 0) {
+          console.log('No reels from backend, generating initial ones');
           generateInitialReels();
         } else {
           setReels(mappedReels);
@@ -327,30 +337,47 @@ const CivicScroll = () => {
       await new Promise(resolve => setTimeout(resolve, 1200));
       setVerificationState('uploading');
       setIsLoading(true);
+      
+      // Get the uploadReel function from our API
       const { uploadReel } = await import('@/api/reels');
-      const uploadedReel = await uploadReel(selectedFile, currentUserId);
+      
+      // Upload the file with user ID and optional description
+      const uploadedReel = await uploadReel(selectedFile, currentUserId, 'A civic reel for a better community');
+      
+      if (!uploadedReel) {
+        throw new Error('Failed to upload reel - server returned null');
+      }
+      
+      // Map the uploaded reel to our frontend format
       const newReel: Reel = {
         id: uploadedReel._id,
-        likes: uploadedReel.likes,
+        likes: uploadedReel.likes || 0,
         isLiked: false,
         media: {
-          type: uploadedReel.media.type,
-          url: uploadedReel.media.url,
+          type: uploadedReel.media.type as 'image' | 'video',
+          url: uploadedReel.media.filePath.startsWith('http') 
+            ? uploadedReel.media.filePath 
+            : window.location.origin + uploadedReel.media.filePath,
         },
-        soundOn: uploadedReel.soundOn,
+        soundOn: uploadedReel.media.type === 'video',
         userId: uploadedReel.userId,
         createdAt: new Date(uploadedReel.createdAt)
       };
+      
+      // Add the new reel to the top of the list
       setReels(prevReels => [newReel, ...prevReels]);
-      setCurrentIndex(0);
-      setViewMode('my');
+      setCurrentIndex(0); // Show the new reel
+      setViewMode('my'); // Switch to My Reels view
+      
+      // Reset UI state
       setSelectedFile(null);
       setUploadDialogOpen(false);
       setVerificationState('idle');
       if (fileInputRef.current) fileInputRef.current.value = '';
+      
+      // Celebrate with confetti and toast notification
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
       toast({ title: "New Reel Created!", description: "Your civic reel is ready to view" });
-      window.location.reload();
     } catch (error) {
       console.error('Error creating reel:', error);
       toast({ title: "Error", description: "Failed to create reel. Please try again.", variant: "destructive" });
@@ -836,54 +863,34 @@ const CivicScroll = () => {
                     <div className="relative z-10 flex flex-col justify-between h-full">
                       {/* Media container with proper aspect ratio */}
                       <div className="absolute inset-0 bg-black">
-                        {filteredReels.length > 0 && filteredReels[currentIndex]?.media.type === 'video' ? (
-                          <video
+                        {filteredReels.length > 0 ? (
+                          <MediaDisplay
                             key={filteredReels[currentIndex].id}
-                            src={filteredReels[currentIndex].media.url}
-                            className="w-full h-full object-cover object-center"
-                            autoPlay
-                            loop
+                            mediaUrl={filteredReels[currentIndex].media.url}
+                            mediaType={filteredReels[currentIndex].media.type}
+                            className="w-full h-full"
+                            autoPlay={true}
+                            loop={true}
                             controls={false}
                             muted={!filteredReels[currentIndex].soundOn}
-                            playsInline
-                            onLoadedData={(e) => {
-                              const video = e.target as HTMLVideoElement;
-                              video.play()
-                                .then(() => {
-                                  if (hasUserInteracted && filteredReels[currentIndex].soundOn) {
-                                    video.muted = false;
-                                    video.volume = 1;
-                                  }
-                                })
-                                .catch(err => console.error('Error auto-playing video:', err));
-                            }}
                             onError={(e) => {
-                              console.error('Video error:', e);
+                              console.error('Media error:', e);
                               toast({
-                                title: "Video Error",
-                                description: "There was an error playing this video",
+                                title: "Media Error",
+                                description: "There was an error loading this content",
                                 variant: "destructive"
                               });
                             }}
-                            style={{ objectPosition: '50% 50%' }}
                           />
                         ) : (
-                          <img
-                            key={filteredReels[currentIndex].id}
-                            src={filteredReels[currentIndex].media.url}
-                            alt="Civic awareness"
-                            className="w-full h-full object-cover object-center"
-                            onError={(e) => {
-                              console.error('Image error:', e);
-                              toast({
-                                title: "Image Error",
-                                description: "There was an error loading this image",
-                                variant: "destructive"
-                              });
-                            }}
-                            style={{ objectPosition: '50% 50%' }}
-                          />
-                        )}
+                          <div
+                            className="w-full h-full flex items-center justify-center bg-gray-900"
+                            key="empty-state"
+                          >
+                            <p className="text-white text-lg">No content available</p>
+                          </div>
+                        )
+                        }
                         {/* Enhanced gradient overlay */}
                         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/90" />
                       </div>
