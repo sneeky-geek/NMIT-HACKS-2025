@@ -4,17 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const OtpVerification = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { login } = useAuth();
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Get phone number from query params or state
-  const phoneNumber = new URLSearchParams(location.search).get('phone') || '';
+  // Get phone number and user type from query params
+  const searchParams = new URLSearchParams(location.search);
+  const phoneNumber = searchParams.get('phone') || '';
+  const userType = searchParams.get('userType') || 'user';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +38,8 @@ const OtpVerification = () => {
         },
         body: JSON.stringify({
           phoneNumber,
-          code: otp
+          code: otp,
+          userType
         }),
       });
 
@@ -44,11 +49,15 @@ const OtpVerification = () => {
         throw new Error(data.message || 'Verification failed');
       }
 
-      // Store token in localStorage
-      localStorage.setItem('token', data.token);
+      // Use auth context to login and store token
+      login(data.token);
       
-      // Navigate to home page after successful verification
-      navigate('/');
+      // Navigate to appropriate dashboard based on user type
+      if (data.user.userType === 'ngo') {
+        navigate('/ngo-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
       
       toast({
         title: 'Success',
@@ -67,18 +76,23 @@ const OtpVerification = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
-      <Card className="w-full max-w-md p-8">
-        <CardHeader>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="pb-4">
           <CardTitle className="text-2xl font-bold text-center">Verify Phone Number</CardTitle>
           <CardDescription className="text-center">
             We've sent an OTP to {phoneNumber}
           </CardDescription>
+          <div className="mt-2 text-center">
+            <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
+              {userType === 'ngo' ? 'NGO Account' : 'Volunteer Account'}
+            </span>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
+            <div className="space-y-2">
+              <label htmlFor="otp" className="text-sm font-medium">
                 Enter OTP
               </label>
               <Input
@@ -87,18 +101,17 @@ const OtpVerification = () => {
                 placeholder="Enter 6-digit OTP"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
               {error && (
-                <p className="mt-2 text-sm text-red-600">{error}</p>
+                <p className="mt-2 text-sm text-destructive">{error}</p>
               )}
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-md py-2 px-4"
+              className="w-full"
               disabled={loading}
             >
-              {loading ? 'Verifying...' : 'Verify'}
+              {loading ? 'Verifying...' : 'Verify & Continue'}
             </Button>
           </form>
         </CardContent>

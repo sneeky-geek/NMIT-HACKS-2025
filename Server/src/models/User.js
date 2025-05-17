@@ -10,6 +10,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    userType: {
+        type: String,
+        enum: ['user', 'ngo'],
+        default: 'user'
+    },
     phoneNumber: {
         type: String,
         required: true,
@@ -42,6 +47,13 @@ const userSchema = new mongoose.Schema({
         city: { type: String, required: false },
         state: { type: String, required: false },
         pincode: { type: String, required: false }
+    },
+    ngoDetails: {
+        organizationName: { type: String },
+        registrationNumber: { type: String },
+        website: { type: String },
+        description: { type: String },
+        causeAreas: [String]
     }
 });
 

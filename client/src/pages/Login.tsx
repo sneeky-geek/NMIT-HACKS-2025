@@ -4,10 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CheckCircle2, Building2 } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [userType, setUserType] = useState('user'); // 'user' for volunteer, 'ngo' for NGO
 
   const [isRegistering, setIsRegistering] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,7 +35,8 @@ const Login = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          phoneNumber
+          phoneNumber,
+          userType
         }),
       });
 
@@ -51,8 +55,8 @@ const Login = () => {
       // Parse response data
       const data = await response.json();
       
-      // Navigate to OTP verification with phone number
-      navigate(`/verify?phone=${encodeURIComponent(phoneNumber)}`);
+      // Navigate to OTP verification with phone number and user type
+      navigate(`/verify?phone=${encodeURIComponent(phoneNumber)}&userType=${userType}`);
       
       toast({
         title: 'Success',
@@ -73,18 +77,49 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
-      <Card className="w-full max-w-md p-8">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Login</CardTitle>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl font-bold text-center">Login to CiviX</CardTitle>
           <CardDescription className="text-center">
-            Enter your phone number to continue
+            Select your role and enter your phone number
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <Tabs defaultValue="user" className="mb-6" onValueChange={(value) => setUserType(value)}>
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="user" className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Volunteer</span>
+              </TabsTrigger>
+              <TabsTrigger value="ngo" className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                <span>NGO</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="user" className="mt-0">
+              <div className="rounded-lg bg-muted/50 p-4 mb-4">
+                <h3 className="font-medium mb-2">Volunteer Account</h3>
+                <p className="text-sm text-muted-foreground">
+                  Login as a volunteer to participate in community activities, earn civic points, and track your impact.
+                </p>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="ngo" className="mt-0">
+              <div className="rounded-lg bg-muted/50 p-4 mb-4">
+                <h3 className="font-medium mb-2">NGO Account</h3>
+                <p className="text-sm text-muted-foreground">
+                  Login as an NGO to create activities, manage volunteers, and connect with the community.
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+            <div className="space-y-2">
+              <label htmlFor="phone" className="text-sm font-medium">
                 Phone Number
               </label>
               <Input
@@ -93,26 +128,28 @@ const Login = () => {
                 placeholder="Enter your phone number"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
             </div>
+            
             <Button 
               type="submit" 
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-md py-2 px-4"
+              className="w-full"
               disabled={loading}
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? 'Sending OTP...' : 'Login with OTP'}
             </Button>
+            
             {error && (
-              <p className="mt-2 text-sm text-red-600">{error}</p>
+              <p className="text-sm text-destructive">{error}</p>
             )}
           </form>
-          <div className="text-center mt-4">
-            <p className="text-sm text-gray-600">
-              New user?{' '}
-              <a href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500" onClick={() => navigate('/signup')}>
-                Sign up
-              </a>
+          
+          <div className="text-center mt-6">
+            <p className="text-sm text-muted-foreground">
+              New to CiviX?{' '}
+              <Button variant="link" className="p-0" onClick={() => navigate('/signup')}>
+                Create an account
+              </Button>
             </p>
           </div>
         </CardContent>

@@ -1,10 +1,15 @@
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { FeatureCard } from "@/components/FeatureCard";
-import { Calendar, Coins, Info, Trash, Bookmark, BarChart3, Heart, ArrowRight } from "lucide-react";
+import { Calendar, Coins, Info, Trash, Bookmark, BarChart3, Heart, ArrowRight, LogIn, UserCircle, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const features = [
     {
       title: "CivicScroll",
@@ -57,6 +62,24 @@ const Index = () => {
               <p className="text-foreground/70 font-inter">
                 Explore the tools and services that make civic engagement rewarding and enjoyable.
               </p>
+              
+              {!isAuthenticated && (
+                <div className="mt-6">
+                  <p className="text-sm text-primary mb-3">
+                    Sign in to access all features
+                  </p>
+                  <div className="flex justify-center gap-4 flex-wrap">
+                    <Button
+                      onClick={() => navigate('/login')}
+                      className="flex items-center gap-2"
+                      size="lg"
+                    >
+                      <LogIn className="h-4 w-4" />
+                      Login to Continue
+                    </Button>
+                  </div>
+                </div>
+              )}
             </motion.div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -145,14 +168,39 @@ const Index = () => {
               <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90 font-inter">
                 Join CiviX today and start your journey toward better civic engagement and a stronger community.
               </p>
-              <motion.button 
-                className="px-8 py-4 bg-white text-purple-700 rounded-full font-medium hover:bg-white/90 transition-all duration-300 flex items-center gap-2 mx-auto btn-hover"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Sign Up Now
-                <ArrowRight className="w-4 h-4" />
-              </motion.button>
+              {!isAuthenticated ? (
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <motion.button
+                    className="px-8 py-4 bg-white text-purple-700 rounded-full font-medium hover:bg-white/90 transition-all duration-300 flex items-center gap-2 btn-hover"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate('/login')}
+                  >
+                    <UserCircle className="w-5 h-5" />
+                    Login as Volunteer
+                  </motion.button>
+                  
+                  <motion.button
+                    className="px-8 py-4 bg-purple-900 text-white rounded-full font-medium hover:bg-purple-800 transition-all duration-300 flex items-center gap-2 btn-hover"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate('/login?type=ngo')}
+                  >
+                    <Building2 className="w-5 h-5" />
+                    Login as NGO
+                  </motion.button>
+                </div>
+              ) : (
+                <motion.button
+                  className="px-8 py-4 bg-white text-purple-700 rounded-full font-medium hover:bg-white/90 transition-all duration-300 flex items-center gap-2 mx-auto btn-hover"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate(user?.userType === 'ngo' ? '/ngo-dashboard' : '/dashboard')}
+                >
+                  Go to Dashboard
+                  <ArrowRight className="w-4 h-4" />
+                </motion.button>
+              )}
             </motion.div>
           </div>
         </section>

@@ -1,15 +1,26 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Home, Scroll, Trash2, Wallet, LogIn, Trophy } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, Home, Scroll, Trash2, Wallet, LogIn, LogOut, Trophy, User } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
 
   // Add scroll effect
   useEffect(() => {
@@ -22,13 +33,23 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const routes = [
+  // Public routes available to all users
+  const publicRoutes = [
     { name: "Home", path: "/", icon: <Home className="w-4 h-4" /> },
+  ];
+  
+  // Protected routes only for authenticated users
+  const protectedRoutes = [
     { name: "CivicScroll", path: "/civic-scroll", icon: <Scroll className="w-4 h-4" /> },
     { name: "Smart Dustbin", path: "/smart-dustbin", icon: <Trash2 className="w-4 h-4" /> },
     { name: "Civic Wallet", path: "/civic-wallet", icon: <Wallet className="w-4 h-4" /> },
     { name: "Missions", path: "/missions", icon: <Trophy className="w-4 h-4" /> },
   ];
+  
+  // Combine routes based on authentication status
+  const routes = isAuthenticated 
+    ? [...publicRoutes, ...protectedRoutes]
+    : publicRoutes;
 
   const itemVariants = {
     closed: { opacity: 0, y: 10 },
@@ -74,15 +95,48 @@ export function Navbar() {
 
         <div className="flex items-center space-x-3">
           <ThemeToggle />
-          <Link to="/login" className="hidden md:flex">
-            <Button 
-              size="sm" 
-              className="font-medium px-4 rounded-full shadow-sm transition-all duration-300 hover:shadow-md hover:scale-105 flex items-center gap-1.5"
-            >
-              <LogIn className="w-4 h-4" />
-              <span>Login</span>
-            </Button>
-          </Link>
+          
+          {isAuthenticated ? (
+            <div className="hidden md:flex">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="font-medium px-4 rounded-full shadow-sm transition-all duration-300 hover:shadow-md hover:scale-105 flex items-center gap-1.5"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>{user?.firstName || 'Account'}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>
+                    {user?.userType === 'ngo' ? 'NGO Account' : 'User Account'}
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => navigate(user?.userType === 'ngo' ? '/ngo-dashboard' : '/dashboard')}>
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => {
+                    logout();
+                    navigate('/');
+                  }} className="text-red-500">
+                    <LogOut className="w-4 h-4 mr-2" /> Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : (
+            <Link to="/login" className="hidden md:flex">
+              <Button 
+                size="sm" 
+                className="font-medium px-4 rounded-full shadow-sm transition-all duration-300 hover:shadow-md hover:scale-105 flex items-center gap-1.5"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Login</span>
+              </Button>
+            </Link>
+          )}
           
           {/* Mobile menu button */}
           <Button
@@ -148,18 +202,45 @@ export function Navbar() {
                   </motion.div>
                 );
               })}
-              <motion.div
-                initial="closed"
-                animate="open"
-                variants={itemVariants}
-                transition={{ duration: 0.4, delay: routes.length * 0.1 }}
-                className="w-full mt-6"
-              >
-                <Button className="w-full mt-4 py-6 rounded-lg flex items-center justify-center gap-2 text-lg">
-                  <LogIn className="w-5 h-5" />
-                  Sign In
-                </Button>
-              </motion.div>
+              {isAuthenticated && (
+                <motion.div
+                  initial="closed"
+                  animate="open"
+                  variants={itemVariants}
+                  transition={{ duration: 0.4, delay: routes.length * 0.1 }}
+                  className="w-full mt-4"
+                >
+                  <button
+                    onClick={() => {
+                      logout();
+                      navigate('/');
+                    }}
+                    className="flex items-center gap-3 py-3 px-4 rounded-lg w-full text-lg font-medium text-red-500 transition-colors hover:bg-red-500/10"
+                  >
+                    <div className="p-2 rounded-md bg-red-500/10 flex items-center justify-center">
+                      <LogOut className="w-4 h-4 text-red-500" />
+                    </div>
+                    Logout
+                  </button>
+                </motion.div>
+              )}
+              {!isAuthenticated && (
+                <motion.div
+                  initial="closed"
+                  animate="open"
+                  variants={itemVariants}
+                  transition={{ duration: 0.4, delay: routes.length * 0.1 }}
+                  className="w-full mt-6"
+                >
+                  <Button 
+                    onClick={() => navigate('/login')}
+                    className="w-full mt-4 py-6 rounded-lg flex items-center justify-center gap-2 text-lg"
+                  >
+                    <LogIn className="w-5 h-5" />
+                    Sign In
+                  </Button>
+                </motion.div>
+              )}
             </div>
           </div>
         </motion.div>
