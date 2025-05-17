@@ -19,6 +19,7 @@ import MyWork from "./pages/MyWork";
 import Complaints from "./pages/Complaints";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { CivicCoinsProvider } from "./contexts/CivicCoinsContext";
 
 const queryClient = new QueryClient();
 
@@ -41,9 +42,10 @@ const HomeRedirect = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
+      <CivicCoinsProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
         <BrowserRouter>
           <Routes>
             {/* Public routes */}
@@ -108,7 +110,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </TooltipProvider>
+        </TooltipProvider>
+      </CivicCoinsProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

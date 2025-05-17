@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCivicCoins } from "@/contexts/CivicCoinsContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +23,7 @@ export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
+  const { civicCoins } = useCivicCoins(); // Use global civic coins state
   
   // Fetch user tokens when authenticated
   useEffect(() => {
@@ -139,7 +141,7 @@ export function Navbar() {
                   <div className="bg-amber-100 dark:bg-amber-950 rounded-full px-3 py-0.5 flex items-center gap-1 shadow-sm border border-amber-200 dark:border-amber-900">
                     <Coins className="h-3.5 w-3.5 text-amber-600 dark:text-amber-500" />
                     <span className="text-amber-700 dark:text-amber-400 text-sm font-medium">
-                      {userTokens !== null ? userTokens : '...'}
+                      {civicCoins}
                     </span>
                   </div>
                 </div>
