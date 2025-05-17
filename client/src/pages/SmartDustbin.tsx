@@ -456,7 +456,7 @@ const SmartDustbin = () => {
                                     animate={{ scale: 1, opacity: 1 }}
                                     transition={{ delay: 0.3 }}
                                   >
-                                    +{qrResponse.coinsEarned} Coins
+                                    +{qrResponse.estimated_value} Coins
                                   </motion.p>
                                   <motion.div 
                                     className="flex flex-col gap-2 w-full"
@@ -474,26 +474,10 @@ const SmartDustbin = () => {
                                         {qrResponse.product_type}
                                       </Badge>
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm text-muted-foreground">Items:</span>
-                                      <span className="font-medium">{qrResponse.number_of_items}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm text-muted-foreground">Value:</span>
-                                      <Badge variant="outline" className="bg-secondary/30">
-                                        ₹{qrResponse.estimated_value}
-                                      </Badge>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-sm text-muted-foreground">Profit Rating:</span>
-                                      <div className="flex items-center">
-                                        {Array.from({ length: 5 }).map((_, i) => (
-                                          <Star
-                                            key={i}
-                                            className={`w-4 h-4 ${i < (qrResponse.profit_rating_out_of_10 || 0) / 2 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`}
-                                          />
-                                        ))}
-                                      </div>
+                                    
+                                    <div className="flex items-center justify-between bg-green-50 p-2 rounded-md mt-2">
+                                      <span className="text-sm font-medium text-green-600">Wallet Update:</span>
+                                      <span className="font-bold text-green-600">+{qrResponse.estimated_value} Coins Added</span>
                                     </div>
                                   </motion.div>
                                 </>
