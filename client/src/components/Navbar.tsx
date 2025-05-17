@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Home, Scroll, Trash2, Wallet, LogIn, LogOut, Trophy, User } from "lucide-react";
+import { Menu, X, Home, Scroll, Trash2, Wallet, LogIn, LogOut, Trophy, User, SearchCheck } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,7 @@ export function Navbar() {
     { name: "CivicScroll", path: "/civic-scroll", icon: <Scroll className="w-4 h-4" /> },
     { name: "Smart Dustbin", path: "/smart-dustbin", icon: <Trash2 className="w-4 h-4" /> },
     { name: "Civic Wallet", path: "/civic-wallet", icon: <Wallet className="w-4 h-4" /> },
+    { name: "FactCheck", path: "/fact-check", icon: <SearchCheck className="w-4 h-4" /> },
     { name: "Missions", path: "/missions", icon: <Trophy className="w-4 h-4" /> },
   ];
   

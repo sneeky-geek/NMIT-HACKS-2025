@@ -8,6 +8,7 @@ import CivicScroll from "./pages/CivicScroll";
 import SmartDustbin from "./pages/SmartDustbin";
 import CivicWallet from "./pages/CivicWallet";
 import Missions from "./pages/Missions";
+import FactCheck from "./pages/FactCheck";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import OtpVerification from "./pages/OtpVerification";
@@ -82,6 +83,11 @@ const App = () => (
             <Route path="/missions" element={
               <ProtectedRoute>
                 <Missions />
+              </ProtectedRoute>
+            } />
+            <Route path="/fact-check" element={
+              <ProtectedRoute>
+                <FactCheck />
               </ProtectedRoute>
             } />
             

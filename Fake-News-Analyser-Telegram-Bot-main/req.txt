@@ -1,0 +1,7 @@
+python-dotenv
+python-telegram-bot
+google-genai
+requests
+pydantic
+pillow
+pytesseract
