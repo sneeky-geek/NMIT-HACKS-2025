@@ -65,33 +65,33 @@ export function Navbar() {
     )}>
       <div className="container flex items-center justify-between h-16 px-4 mx-auto">
         <Link to="/" className="flex items-center space-x-2 group">
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shadow-sm transform transition-transform group-hover:scale-110 duration-300">
-            <span className="text-primary-foreground font-bold">C</span>
-          </div>
+          <img src="/logo.png" alt="CiviX Logo" className="h-16 w-auto transform transition-transform group-hover:scale-110 duration-300" />
           <span className="font-poppins font-semibold text-lg tracking-tight">CiviX</span>
         </Link>
 
-        {/* Desktop navigation */}
-        <div className="hidden md:flex md:items-center md:space-x-1 lg:space-x-2">
-          {routes.map((route) => {
-            const isActive = location.pathname === route.path;
-            return (
-              <Link
-                key={route.path}
-                to={route.path}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                  isActive 
-                    ? "text-primary bg-primary/10" 
-                    : "text-foreground/70 hover:text-foreground hover:bg-accent"
-                )}
-              >
-                {route.icon}
-                <span>{route.name}</span>
-              </Link>
-            );
-          })}
-        </div>
+        {/* Desktop navigation - only shown when user is logged in */}
+        {isAuthenticated && (
+          <div className="hidden md:flex md:items-center md:space-x-1 lg:space-x-2">
+            {routes.map((route) => {
+              const isActive = location.pathname === route.path;
+              return (
+                <Link
+                  key={route.path}
+                  to={route.path}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                    isActive 
+                      ? "text-primary bg-primary/10" 
+                      : "text-foreground/70 hover:text-foreground hover:bg-accent"
+                  )}
+                >
+                  {route.icon}
+                  <span>{route.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex items-center space-x-3">
           <ThemeToggle />
@@ -173,7 +173,7 @@ export function Navbar() {
               </Button>
             </div>
             <div className="flex flex-col space-y-4 mt-12 items-start px-4">
-              {routes.map((route, index) => {
+              {isAuthenticated && routes.map((route, index) => {
                 const isActive = location.pathname === route.path;
                 return (
                   <motion.div

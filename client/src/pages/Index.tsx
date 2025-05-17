@@ -49,55 +49,10 @@ const Index = () => {
       <main className="flex-1">
         <Hero />
         
-        {/* Features Section */}
-        <section className="py-24 bg-gradient-to-b from-secondary/50 to-background">
-          <div className="container px-4 mx-auto">
-            <motion.div 
-              className="text-center max-w-3xl mx-auto mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <h2 className="text-3xl font-bold mb-4 font-poppins">Our Features</h2>
-              <p className="text-foreground/70 font-inter">
-                Explore the tools and services that make civic engagement rewarding and enjoyable.
-              </p>
-              
-              {!isAuthenticated && (
-                <div className="mt-6">
-                  <p className="text-sm text-primary mb-3">
-                    Sign in to access all features
-                  </p>
-                  <div className="flex justify-center gap-4 flex-wrap">
-                    <Button
-                      onClick={() => navigate('/login')}
-                      className="flex items-center gap-2"
-                      size="lg"
-                    >
-                      <LogIn className="h-4 w-4" />
-                      Login to Continue
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <FeatureCard
-                  key={feature.title}
-                  title={feature.title}
-                  description={feature.description}
-                  icon={feature.icon}
-                  index={index}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
+
         
         {/* How It Works Section */}
-        <section className="py-24 relative overflow-hidden">
+        <section className="py-24 bg-gradient-to-b from-background to-secondary/50 relative overflow-hidden">
           <div className="absolute inset-0 -z-10">
             <div className="absolute left-1/4 bottom-1/3 w-[300px] h-[300px] bg-purple-400/10 dark:bg-purple-500/5 rounded-full blur-3xl"></div>
             <div className="absolute right-1/4 top-1/3 w-[250px] h-[250px] bg-purple-600/10 dark:bg-purple-600/5 rounded-full blur-3xl"></div>
@@ -156,69 +111,20 @@ const Index = () => {
           </div>
         </section>
         
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-br from-purple-600 to-purple-700 text-white">
-          <div className="container px-4 mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <h2 className="text-3xl font-bold mb-6 font-poppins">Ready to Make a Difference?</h2>
-              <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90 font-inter">
-                Join CiviX today and start your journey toward better civic engagement and a stronger community.
-              </p>
-              {!isAuthenticated ? (
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <motion.button
-                    className="px-8 py-4 bg-white text-purple-700 rounded-full font-medium hover:bg-white/90 transition-all duration-300 flex items-center gap-2 btn-hover"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => navigate('/login')}
-                  >
-                    <UserCircle className="w-5 h-5" />
-                    Login as Volunteer
-                  </motion.button>
-                  
-                  <motion.button
-                    className="px-8 py-4 bg-purple-900 text-white rounded-full font-medium hover:bg-purple-800 transition-all duration-300 flex items-center gap-2 btn-hover"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => navigate('/login?type=ngo')}
-                  >
-                    <Building2 className="w-5 h-5" />
-                    Login as NGO
-                  </motion.button>
-                </div>
-              ) : (
-                <motion.button
-                  className="px-8 py-4 bg-white text-purple-700 rounded-full font-medium hover:bg-white/90 transition-all duration-300 flex items-center gap-2 mx-auto btn-hover"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => navigate(user?.userType === 'ngo' ? '/ngo-dashboard' : '/dashboard')}
-                >
-                  Go to Dashboard
-                  <ArrowRight className="w-4 h-4" />
-                </motion.button>
-              )}
-            </motion.div>
-          </div>
-        </section>
+        
       </main>
       
-      <footer className="py-10 border-t">
-        <div className="container px-4 mx-auto">
+      <footer className="py-0 border-t">
+        <div className="container px-2 mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-6 md:mb-0">
               <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold">C</span>
-                </div>
+                <img src="/logo.png" alt="CiviX Logo" className="h-16 w-auto" />
                 <span className="font-semibold text-lg font-poppins">CiviX</span>
               </div>
             </div>
             <div className="text-sm text-foreground/70 font-inter">
-              © 2025 CiviX. All rights reserved.
+              2025 CiviX. All rights reserved.
             </div>
           </div>
         </div>
