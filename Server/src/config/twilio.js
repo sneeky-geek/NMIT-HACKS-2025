@@ -1,24 +1,34 @@
 import twilio from 'twilio';
 
-// Check if we're in development/test mode
-const USE_MOCK_OTP = process.env.NODE_ENV === 'development' || !process.env.TWILIO_VERIFY_SERVICE_SID;
+// Force mock mode for development
+const USE_MOCK_OTP = true;
 
-// Initialize Twilio client if we're not using mock
+console.log('USING MOCK OTP MODE - OTPs will be displayed in console');
+
+// Initialize Twilio client with hardcoded credentials from .env for production use
 let client;
-if (!USE_MOCK_OTP) {
-    client = twilio(
-        process.env.TWILIO_ACCOUNT_SID?.trim(),
-        process.env.TWILIO_AUTH_TOKEN?.trim()
-    );
+
+// Get credentials from environment
+const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim() || 'AC4822dd667d924dc4a9b2f979c096a206';
+const authToken = process.env.TWILIO_AUTH_TOKEN?.trim() || '453412c76782db8a90f3697d3ac923e3';
+const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID?.trim() || 'VA6ef48272825eac962a4e5c04f4717a56';
+
+try {
+    client = twilio(accountSid, authToken);
+    console.log('Twilio client initialized successfully with Account SID:', accountSid.substring(0, 5) + '...');
+    console.log('Using Verify Service SID:', verifyServiceSid.substring(0, 5) + '...');
+} catch (error) {
+    console.error('Failed to initialize Twilio client:', error.message);
+    throw new Error('Failed to initialize Twilio client. Please check your credentials.');
 }
 
-// Ensure the service SID is trimmed of any whitespace
-const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID?.trim();
+// verifyServiceSid is already declared above
 
 console.log('Twilio Configuration:', {
     useMockOTP: USE_MOCK_OTP,
     accountSid: process.env.TWILIO_ACCOUNT_SID ? `${process.env.TWILIO_ACCOUNT_SID.substring(0, 5)}...` : undefined,
-    verifySid: verifyServiceSid ? `${verifyServiceSid.substring(0, 5)}...` : undefined
+    verifySid: verifyServiceSid ? `${verifyServiceSid.substring(0, 5)}...` : undefined,
+    mode: USE_MOCK_OTP ? 'MOCK (Development)' : 'PRODUCTION'
 });
 
 // Store OTPs in memory for development/testing (not for production)
@@ -81,35 +91,35 @@ export const sendOTP = async (phoneNumber, forceMockOTP = false) => {
     try {
         // Always format to E.164 with +91 as default
         const formattedPhone = toE164(phoneNumber);
-        
+
         // Rate limiting disabled for demo purposes
         // Always allow OTP requests regardless of timing
         const { canSend, timeRemaining } = canSendOTP(formattedPhone);
         // We've disabled the rate limiter in canSendOTP, but this is a safeguard
         // to ensure we never return rate_limited status
-        
+
         // Update the last request time for rate limiting
         otpRequestTimes.set(formattedPhone, Date.now());
-        
+
         // If in development/test mode or mock is forced, use a mock OTP
         if (USE_MOCK_OTP || forceMockOTP) {
             console.log('Using mock OTP for development');
             // Always use "200525" as the fixed OTP for demo purposes
             const mockOtp = "200525";
-            
+
             // IMPORTANT: Store with the formatted phone number
             mockOtps.set(formattedPhone, mockOtp);
             console.log(`Mock OTP for ${formattedPhone}: ${mockOtp}`);
-            
+
             // Debug: Log all stored mock OTPs
             console.log('Current mock OTPs:', Array.from(mockOtps.entries()));
-            
+
             return {
                 status: 'pending',
                 to: formattedPhone
             };
         }
-        
+
         // Use actual Twilio in production
         try {
             const verification = await client.verify.v2.services(verifyServiceSid)
@@ -129,7 +139,7 @@ export const sendOTP = async (phoneNumber, forceMockOTP = false) => {
                     to: formattedPhone
                 };
             }
-            
+
             // Re-throw other Twilio errors to be caught by the outer catch
             throw twilioError;
         }
@@ -150,7 +160,7 @@ export const verifyOTP = async (phoneNumber, code) => {
     try {
         console.log(`Attempting to verify OTP for ${formattedPhone} with code ${code}`);
         console.log(`Using ${USE_MOCK_OTP ? 'MOCK' : 'TWILIO'} verification mode`);
-        
+
         // For demo purposes, always accept "200525" as valid OTP
         if (code === "200525") {
             console.log(`Demo OTP verification for ${formattedPhone}: approved (using fixed OTP 200525)`);
@@ -160,34 +170,34 @@ export const verifyOTP = async (phoneNumber, code) => {
                 valid: true
             };
         }
-        
+
         // If in development/test mode, use the mock OTP
         if (USE_MOCK_OTP) {
             // Debug: Log all stored mock OTPs
             console.log('Current mock OTPs:', Array.from(mockOtps.entries()));
-            
+
             const mockOtp = mockOtps.get(formattedPhone);
             console.log(`Mock OTP for ${formattedPhone}:`, mockOtp);
-            
+
             // Check if the OTP matches
             const isValid = mockOtp === code;
-            
+
             console.log(`Mock OTP verification for ${formattedPhone}: ${isValid ? 'approved' : 'rejected'}`);
-            
+
             return {
                 status: isValid ? 'approved' : 'rejected',
                 to: formattedPhone,
                 valid: isValid
             };
         }
-        
+
         // For Twilio verification
         console.log(`Using Twilio Verify SID: ${verifyServiceSid?.substring(0, 5)}...`);
-        
+
         if (!verifyServiceSid) {
             throw new Error('Twilio Verify Service SID is missing. Check your environment variables.');
         }
-        
+
         // For demo purposes, skip actual Twilio verification if code is "200525"
         if (code === "200525") {
             console.log('Demo mode: Skipping Twilio verification and approving OTP 200525');
@@ -197,7 +207,7 @@ export const verifyOTP = async (phoneNumber, code) => {
                 valid: true
             };
         }
-        
+
         // Verify OTP using Twilio in production
         try {
             const verificationCheck = await client.verify.v2.services(verifyServiceSid)
@@ -206,7 +216,7 @@ export const verifyOTP = async (phoneNumber, code) => {
                     to: formattedPhone,
                     code: code
                 });
-            
+
             console.log('Twilio verification result:', verificationCheck.status);
             return verificationCheck;
         } catch (twilioError) {
