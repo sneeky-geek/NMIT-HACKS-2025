@@ -483,15 +483,22 @@ export default function Missions() {
     if (isDemoActivity) {
       // For demo activities, simulate a successful registration
       setTimeout(() => {
-        setIsVolunteerDialogOpen(false);
+        // Create a volunteer entry for the current user
+        const newVolunteer = {
+          userId: user?.id || 'demo-user',
+          name: volunteerForm.name,
+          phoneNumber: volunteerForm.phoneNumber,
+          joinedAt: new Date().toISOString()
+        };
         
-        // Update the volunteer count in the UI for the demo activity
+        // Update the volunteer count and list in the UI for the demo activity
         const updatedActivities = ngoActivities.map(activity => 
           activity._id === selectedActivity._id 
             ? { 
                 ...activity, 
                 volunteerCount: activity.volunteerCount + 1,
-                userHasVolunteered: true 
+                userHasVolunteered: true,
+                volunteers: [...(activity.volunteers || []), newVolunteer]
               } 
             : activity
         );
@@ -501,8 +508,13 @@ export default function Missions() {
         
         // Update local user object to include this activity
         if (user && !user.volunteeredEvents?.includes(selectedActivity._id)) {
-          user.volunteeredEvents = [...(user.volunteeredEvents || []), selectedActivity._id];
+          // Create a safe copy of volunteeredEvents array or initialize it
+          const updatedEvents = [...(user.volunteeredEvents || []), selectedActivity._id];
+          // Update the user object safely
+          user.volunteeredEvents = updatedEvents;
         }
+        
+        setIsVolunteerDialogOpen(false);
         
         toast({
           title: "Success",
@@ -532,19 +544,22 @@ export default function Missions() {
       const data = await response.json();
       
       if (response.ok) {
-        setIsVolunteerDialogOpen(false);
-        toast({
-          title: "Success",
-          description: "You've successfully registered as a volunteer!",
-        });
+        // Create a volunteer entry for the current user
+        const newVolunteer = {
+          userId: user?.id || 'user-id',
+          name: volunteerForm.name,
+          phoneNumber: volunteerForm.phoneNumber,
+          joinedAt: new Date().toISOString()
+        };
         
-        // Update the volunteer count in the UI and mark as volunteered
+        // Update the volunteer count and list in the UI
         const updatedActivities = ngoActivities.map(activity => 
           activity._id === selectedActivity._id 
             ? { 
                 ...activity, 
-                volunteerCount: data.volunteerCount,
-                userHasVolunteered: true 
+                volunteerCount: data.volunteerCount || (activity.volunteerCount + 1),
+                userHasVolunteered: true,
+                volunteers: [...(activity.volunteers || []), newVolunteer]
               } 
             : activity
         );
@@ -552,14 +567,26 @@ export default function Missions() {
         // Update state with the new activities list
         setNgoActivities(updatedActivities);
         
-        // Update local user object to include this activity
-        if (user && !user.volunteeredEvents?.includes(selectedActivity._id)) {
-          user.volunteeredEvents = [...(user.volunteeredEvents || []), selectedActivity._id];
-          // Optionally update tokens if the API returns that info
-          if (data.totalTokens) {
-            user.tokens = data.totalTokens;
+        // Safely update local user object to include this activity
+        if (user) {
+          // Make sure volunteeredEvents exists and is an array before updating
+          const currentEvents = Array.isArray(user.volunteeredEvents) ? user.volunteeredEvents : [];
+          if (!currentEvents.includes(selectedActivity._id)) {
+            // Create a new array instead of mutating the existing one
+            user.volunteeredEvents = [...currentEvents, selectedActivity._id];
+            
+            // Optionally update tokens if the API returns that info
+            if (data.totalTokens) {
+              user.tokens = data.totalTokens;
+            }
           }
         }
+        
+        setIsVolunteerDialogOpen(false);
+        toast({
+          title: "Success",
+          description: "You've successfully registered as a volunteer!",
+        });
       } else {
         toast({
           title: "Error",
@@ -756,7 +783,7 @@ export default function Missions() {
                     
                     <CardFooter>
                       <Button 
-                        variant={activity.userHasVolunteered || user?.volunteeredEvents?.includes(activity._id) ? "outline" : "default"}
+                        variant={activity.userHasVolunteered || (user?.volunteeredEvents && Array.isArray(user.volunteeredEvents) && user.volunteeredEvents.includes(activity._id)) ? "outline" : "default"}
                         className="w-full"
                         disabled={
                           // Disable if activity is not upcoming or ongoing
@@ -766,7 +793,7 @@ export default function Missions() {
                           // Disable if max volunteers reached
                           activity.volunteerCount >= activity.volunteersNeeded ||
                           // Disable if user already volunteered for this activity
-                          activity.userHasVolunteered || user?.volunteeredEvents?.includes(activity._id)
+                          activity.userHasVolunteered || (user?.volunteeredEvents && Array.isArray(user.volunteeredEvents) && user.volunteeredEvents.includes(activity._id))
                         }
                         onClick={() => {
                           if (!token) {
@@ -797,7 +824,7 @@ export default function Missions() {
                             return;
                           }
                           
-                          if (activity.userHasVolunteered || user?.volunteeredEvents?.includes(activity._id)) {
+                          if (activity.userHasVolunteered || (user?.volunteeredEvents && Array.isArray(user.volunteeredEvents) && user.volunteeredEvents.includes(activity._id))) {
                             toast({
                               title: "Already Registered",
                               description: "You have already volunteered for this activity",
@@ -806,17 +833,29 @@ export default function Missions() {
                             return;
                           }
                           
-                          setSelectedActivity(activity);
-                          setVolunteerForm({ 
-                            name: user ? `${user.firstName} ${user.lastName}` : "", 
-                            phoneNumber: user?.phoneNumber || ""
-                          });
-                          setIsVolunteerDialogOpen(true);
+                          // Set the activity before opening the dialog
+                          try {
+                            setSelectedActivity(activity);
+                            // Safely set volunteer form with user data if available
+                            const fullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : "";
+                            setVolunteerForm({
+                              name: fullName,
+                              phoneNumber: user?.phoneNumber || ""
+                            });
+                            setIsVolunteerDialogOpen(true);
+                          } catch (error) {
+                            console.error('Error preparing volunteer form:', error);
+                            toast({
+                              title: "Error",
+                              description: "Something went wrong. Please try again.",
+                              variant: "destructive"
+                            });
+                          }
                         }}
                       >
                         {activity.status === 'completed' ? 'Activity Completed' :
                          activity.status === 'cancelled' ? 'Activity Cancelled' :
-                         activity.userHasVolunteered || user?.volunteeredEvents?.includes(activity._id) ? 'Already Volunteered' :
+                         activity.userHasVolunteered || (user?.volunteeredEvents && Array.isArray(user.volunteeredEvents) && user.volunteeredEvents.includes(activity._id)) ? 'Already Volunteered' :
                          activity.volunteerCount >= activity.volunteersNeeded ? 'Fully Booked' :
                          user?.userType === 'ngo' ? 'NGOs Cannot Volunteer' :
                          'Volunteer Now'}
@@ -966,52 +1005,74 @@ export default function Missions() {
       </Dialog>
       
       {/* Volunteer Registration Dialog */}
-      <Dialog open={isVolunteerDialogOpen} onOpenChange={setIsVolunteerDialogOpen}>
+      <Dialog open={isVolunteerDialogOpen} onOpenChange={(open) => {
+        // Only allow closing if not currently loading
+        if (!loading || !open) {
+          setIsVolunteerDialogOpen(open);
+        }
+      }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Volunteer Registration</DialogTitle>
+            <DialogDescription>
+              Join {selectedActivity?.ngo?.organizationName || 'this organization'} as a volunteer for this activity.
+            </DialogDescription>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="activity">Activity</Label>
               <div className="p-2 bg-secondary/20 rounded-md text-sm">
-                {selectedActivity?.name}
+                {selectedActivity?.name || 'Loading...'}
               </div>
             </div>
             
             <div className="grid gap-2">
               <Label htmlFor="organization">Organization</Label>
               <div className="p-2 bg-secondary/20 rounded-md text-sm">
-                {selectedActivity?.ngo.organizationName}
+                {selectedActivity?.ngo?.organizationName || 'Loading...'}
               </div>
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="name">Your Name</Label>
+              <Label htmlFor="name">Your Name <span className="text-destructive">*</span></Label>
               <Input 
                 id="name" 
                 value={volunteerForm.name}
                 onChange={(e) => setVolunteerForm({...volunteerForm, name: e.target.value})}
                 placeholder="Enter your full name"
+                autoComplete="name"
+                required
               />
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">Phone Number <span className="text-destructive">*</span></Label>
               <Input 
                 id="phone" 
                 value={volunteerForm.phoneNumber}
                 onChange={(e) => setVolunteerForm({...volunteerForm, phoneNumber: e.target.value})}
                 placeholder="Enter your phone number"
+                autoComplete="tel"
+                required
               />
+              <p className="text-xs text-muted-foreground">This will be shared with the organization for coordination</p>
             </div>
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsVolunteerDialogOpen(false)} disabled={loading}>Cancel</Button>
-            <Button onClick={handleVolunteerSubmit} disabled={loading}>
-              {loading ? 'Registering...' : 'Register as Volunteer'}
+            <Button variant="outline" onClick={() => setIsVolunteerDialogOpen(false)} disabled={loading}>
+              Cancel
+            </Button>
+            <Button onClick={handleVolunteerSubmit} disabled={loading || !volunteerForm.name || !volunteerForm.phoneNumber}>
+              {loading ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent"></span>
+                  Registering...
+                </>
+              ) : (
+                'Register as Volunteer'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

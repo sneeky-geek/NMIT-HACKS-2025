@@ -16,6 +16,7 @@ import Signup from "./pages/Signup";
 import UserDashboard from "./pages/UserDashboard";
 import NgoDashboard from "./pages/NgoDashboard";
 import MyWork from "./pages/MyWork";
+import Complaints from "./pages/Complaints";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
@@ -94,6 +95,12 @@ const App = () => (
             <Route path="/fact-check" element={
               <ProtectedRoute>
                 <FactCheck />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/complaints" element={
+              <ProtectedRoute userTypes={['user']}>
+                <Complaints />
               </ProtectedRoute>
             } />
             

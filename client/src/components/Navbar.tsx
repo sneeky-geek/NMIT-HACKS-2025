@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Home, Scroll, Trash2, Wallet, LogIn, LogOut, Trophy, User, SearchCheck, Briefcase, Coins } from "lucide-react";
+import { Menu, X, Home, Scroll, Trash2, Wallet, LogIn, LogOut, Trophy, User, SearchCheck, Briefcase, Coins, AlertTriangle } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -197,9 +197,14 @@ export function Navbar() {
                   
                   {/* Only show My Work for regular users */}
                   {user?.userType === 'user' && (
-                    <DropdownMenuItem onClick={() => navigate('/my-work')}>
-                      <Briefcase className="w-4 h-4 mr-2" /> My Work
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/my-work')}>
+                        <Briefcase className="w-4 h-4 mr-2" /> My Work
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/complaints')}>
+                        <AlertTriangle className="w-4 h-4 mr-2" /> Report Issues
+                      </DropdownMenuItem>
+                    </>
                   )}
                   
                   <DropdownMenuSeparator />
@@ -289,12 +294,34 @@ export function Navbar() {
                   </motion.div>
                 );
               })}
-              {isAuthenticated && (
+              {/* Special items for users */}
+              {isAuthenticated && user?.userType === 'user' && (
                 <motion.div
                   initial="closed"
                   animate="open"
                   variants={itemVariants}
                   transition={{ duration: 0.4, delay: routes.length * 0.1 }}
+                  className="w-full mt-4"
+                >
+                  <Link
+                    to="/complaints"
+                    className="flex items-center gap-3 py-3 px-4 rounded-lg w-full text-lg font-medium transition-colors bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <div className="p-2 rounded-md bg-amber-500/20 flex items-center justify-center">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    Report Issues
+                  </Link>
+                </motion.div>
+              )}
+              
+              {isAuthenticated && (
+                <motion.div
+                  initial="closed"
+                  animate="open"
+                  variants={itemVariants}
+                  transition={{ duration: 0.4, delay: (routes.length + 1) * 0.1 }}
                   className="w-full mt-4"
                 >
                   <button

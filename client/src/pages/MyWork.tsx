@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Briefcase, Calendar, MapPin, LoaderCircle, Users, Clock } from "lucide-react";
+import { Briefcase, Calendar, MapPin, LoaderCircle, Users, Clock, AlertTriangle } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/Navbar";
@@ -124,13 +124,24 @@ const MyWork = () => {
             <h1 className="text-2xl font-bold">My Volunteering Work</h1>
           </div>
           
-          <Button 
-            variant="outline" 
-            className="hidden sm:flex items-center gap-2"
-            onClick={() => navigate('/missions')}
-          >
-            Explore More Activities
-          </Button>
+          <div className="hidden sm:flex items-center gap-2">
+            <Button 
+              variant="secondary" 
+              className="flex items-center gap-2"
+              onClick={() => navigate('/complaints')}
+            >
+              <AlertTriangle className="w-4 h-4" />
+              Report Issues
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => navigate('/missions')}
+            >
+              Explore More Activities
+            </Button>
+          </div>
         </div>
         
         {isLoading ? (
@@ -145,13 +156,23 @@ const MyWork = () => {
               </div>
               <h3 className="text-xl font-medium mb-2">No Volunteering History</h3>
               <p className="text-muted-foreground mb-6">You haven't volunteered for any events yet.</p>
-              <Button 
-                variant="default" 
-                size="lg"
-                onClick={() => navigate('/missions')}
-              >
-                Find Volunteering Opportunities
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button 
+                  variant="default" 
+                  size="lg"
+                  onClick={() => navigate('/missions')}
+                >
+                  Find Volunteering Opportunities
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => navigate('/complaints')}
+                >
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Report Community Issues
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (

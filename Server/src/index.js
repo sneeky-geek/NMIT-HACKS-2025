@@ -9,6 +9,7 @@ import authRoutes from './routes/authRoutes.js';
 import ngoRoutes from './routes/ngoRoutes.js';
 import reelRoutes from './routes/reels.js';
 import tokenRoutes from './routes/tokenRoutes.js';
+import complaintRoutes from './routes/complaintRoutes.js';
 
 // Load environment variables first
 dotenv.config();
@@ -91,6 +92,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/ngo', ngoRoutes);
 app.use('/api/reels', reelRoutes);
 app.use('/api/tokens', tokenRoutes);
+app.use('/api/complaints', complaintRoutes);
 
 // Basic route for testing
 app.get('/api/test', (req, res) => {
