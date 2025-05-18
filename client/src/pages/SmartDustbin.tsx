@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Html5Qrcode } from "html5-qrcode";
 import { Star } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
+import { useCivicCoins } from "@/contexts/CivicCoinsContext";
 
 // QR Response data interface
 type QRResponse = {
@@ -34,6 +35,9 @@ const SmartDustbin = () => {
   const [qrResponse, setQrResponse] = useState<QRResponse | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [processingQR, setProcessingQR] = useState(false);
+  
+  // Get the civic coins context to update coins when recycling
+  const { addCoins } = useCivicCoins();
   
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerRef = useRef<HTMLDivElement>(null);
@@ -88,7 +92,7 @@ const SmartDustbin = () => {
           const qrScanner = new Html5Qrcode("qr-reader");
           scannerRef.current = qrScanner;
           
-          const config = { fps: 10, qrbox: { width: 320, height: 320 } };
+          const config = { fps: 10, qrbox: { width: 250, height: 250 } };
           
           await qrScanner.start(
             { facingMode: "environment" },
@@ -148,6 +152,14 @@ const SmartDustbin = () => {
     setProcessingQR(true);
     setIsScanning(false);
     
+    // Try to extract coin amount directly from the raw QR string first
+    let directCoinAmount = 0;
+    const rawCoinMatch = decodedText.match(/\+?\s*(\d+)\s*coins/i);
+    if (rawCoinMatch && rawCoinMatch[1]) {
+      directCoinAmount = parseInt(rawCoinMatch[1], 10);
+      console.log("Found coin amount in raw QR data:", directCoinAmount);
+    }
+    
     // Create a delay to show the animation (1.5-2s)
     setTimeout(() => {
       try {
@@ -186,10 +198,58 @@ const SmartDustbin = () => {
         );
         
         if (isValidFormat) {
-          // Calculate coins earned based on profit rating and estimated value
-          const estimatedValue = Number(parsedData.estimated_value) || 0;
-          const profitRating = Number(parsedData.profit_rating_out_of_10) || 0;
-          const coinsEarned = Math.max(1, Math.floor((estimatedValue / 100) * (profitRating / 10) * 5)); // Coins based on value and rating
+          // Use the coin amount we already extracted from the raw text, if available
+          let coinsEarned = directCoinAmount;
+          
+          // If we didn't find coins in the raw text, try other methods
+          if (coinsEarned === 0) {
+            // Check the parsed data
+            const coinRegex = /\+?\s*(\d+)\s*coins/i;
+            
+            // Try recyclable field
+            if (parsedData.recyclable && typeof parsedData.recyclable === 'string') {
+              const recycleMatch = parsedData.recyclable.match(coinRegex);
+              if (recycleMatch && recycleMatch[1]) {
+                coinsEarned = parseInt(recycleMatch[1], 10);
+                console.log("Found coin amount in recyclable field:", coinsEarned);
+              }
+            }
+            
+            // Try wallet_update field
+            if (coinsEarned === 0 && parsedData.wallet_update && typeof parsedData.wallet_update === 'string') {
+              const walletMatch = parsedData.wallet_update.match(coinRegex);
+              if (walletMatch && walletMatch[1]) {
+                coinsEarned = parseInt(walletMatch[1], 10);
+                console.log("Found coin amount in wallet_update field:", coinsEarned);
+              }
+            }
+            
+            // Check explicit coinsEarned field
+            if (coinsEarned === 0 && parsedData.coinsEarned !== undefined) {
+              coinsEarned = Number(parsedData.coinsEarned);
+              console.log("Using explicit coinsEarned field:", coinsEarned);
+            }
+            
+            // Use object-specific default values as a last resort
+            if (coinsEarned === 0) {
+              const objectType = (parsedData.object || "").toLowerCase();
+              if (objectType.includes("laptop")) {
+                coinsEarned = 500;
+                console.log("Using default value of 500 coins for Laptop");
+              } else if (objectType.includes("mouse")) {
+                coinsEarned = 20;
+                console.log("Using default value of 20 coins for Computer Mouse");
+              } else {
+                // Fallback calculation
+                const estimatedValue = Number(parsedData.estimated_value) || 0;
+                const profitRating = Number(parsedData.profit_rating_out_of_10) || 0;
+                coinsEarned = Math.max(1, Math.floor((estimatedValue / 100) * (profitRating / 10) * 5));
+                console.log("Using calculated value:", coinsEarned);
+              }
+            }
+          }
+          
+          console.log("Final coins to be awarded:", coinsEarned);
           
           const response: QRResponse = {
             success: true,
@@ -212,11 +272,60 @@ const SmartDustbin = () => {
           
           const isRecyclable = parsedData.recyclable?.toLowerCase() === 'yes';
           
+          // Update global civic coins if item is recyclable
+          if (isRecyclable && coinsEarned > 0) {
+            // Add the earned coins to the global civic coins context
+            addCoins(coinsEarned);
+            
+            // Send coins update to the backend
+            // Create a separate async function to handle the API call
+            const updateTokensOnServer = async () => {
+              try {
+                const token = localStorage.getItem('token');
+                if (token) {
+                  const response = await fetch('http://localhost:3000/api/tokens/add', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': Bearer ${token}
+                    },
+                    body: JSON.stringify({ 
+                      amount: coinsEarned,
+                      source: 'recycling',
+                      itemDetails: {
+                        object: parsedData.object,
+                        productType: parsedData.product_type
+                      }
+                    })
+                  });
+                  
+                  if (!response.ok) {
+                    console.error('Failed to update tokens on server:', response.statusText);
+                    // If server update fails, revert the local update
+                    addCoins(-coinsEarned);
+                    throw new Error('Failed to update tokens on server');
+                  }
+                }
+              } catch (error) {
+                console.error('Error updating tokens:', error);
+                // Toast to inform user of the error
+                toast({
+                  title: "Error Updating Coins",
+                  description: "There was a problem adding coins to your account. Please try again later.",
+                  variant: "destructive"
+                });
+              }
+            };
+            
+            // Execute the async function
+            updateTokensOnServer();
+          }
+          
           toast({
-            title: isRecyclable ? "Item is Recyclable! ♻️" : "Item is Not Recyclable ❌",
+            title: isRecyclable ? "Item is Recyclable! ♻" : "Item is Not Recyclable ❌",
             description: isRecyclable ? 
-              `You earned ${coinsEarned} Civic Coins for recycling ${parsedData.object}.` :
-              `This item cannot be recycled. Please dispose properly.`,
+              Successfully recycled ${parsedData.object}. :
+              This item cannot be recycled. Please dispose properly.,
             variant: isRecyclable ? "default" : "destructive"
           });
         } else {
@@ -544,14 +653,12 @@ const SmartDustbin = () => {
                           
                         </div>
                       ) : (
-                        <div className="text-center text-muted-foreground p-6 bg-gradient-to-br from-white/50 via-white/30 to-purple-50/20 dark:from-zinc-900/50 dark:via-purple-900/10 dark:to-zinc-900/50 backdrop-blur-sm border-2 border-purple-800/20 dark:border-purple-600/20 rounded-xl shadow-[0_0_15px_rgba(124,58,237,0.05)] dark:shadow-[0_0_15px_rgba(124,58,237,0.1)]" ref={scannerContainerRef}>
-                          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                            <Camera className="h-8 w-8 text-primary/70" />
-                          </div>
-                          <p className="text-lg font-medium text-foreground">Camera access required</p>
-                          <p className="text-sm mt-2 text-muted-foreground">Click "Scan QR" to open camera</p>
+                        <div className="text-center text-muted-foreground p-4" ref={scannerContainerRef}>
+                          <Camera className="h-12 w-12 mx-auto mb-3 text-primary/70" />
+                          <p className="text-lg">Camera access required</p>
+                          <p className="text-sm mt-2">Click "Scan QR" to open camera</p>
                           {cameraError && (
-                            <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-lg text-sm border border-destructive/20 shadow-sm">
+                            <div className="mt-4 p-2 bg-destructive/10 text-destructive rounded-md text-sm">
                               {cameraError}
                             </div>
                           )}
