@@ -28,6 +28,7 @@ def analyze_news(news_input, model_id=model_id, google_search_tool=google_search
             You are a Fake NEWS Detector. You will be given a news article or claim, and you need to determine if it is real or fake.
             Provide a JSON with: "verdict" ("Real", "Fake" or "Uncertain"), "confidence" (float 0-1), "reason" (proper valid reason for the verdict), "sources" (object with titles).
             example: {"verdict": "Fake", "confidence": 0.85, "reason": "The article contains misleading information.", "sources": {"title1": "source1", "title2": "source2"}}
+            NOTE : Recheck the response before responding especially the links.
             """,
             tools=[google_search_tool]
         )
