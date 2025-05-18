@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Navbar } from "@/components/Navbar";
 import axios from "axios";
+import { API_CONFIG } from "@/config";
 import { 
   FileUp, 
   Link as LinkIcon, 
@@ -75,7 +76,7 @@ const FactCheck = () => {
       
       if (activeTab === "text") {
         // Text-only verification
-        response = await axios.post("http://127.0.0.1:8000/api/analyze", {
+        response = await axios.post(`${API_CONFIG.FACT_CHECK_API_URL}/api/analyze`, {
           text: textInput,
           image_url: "", // Optional, leaving empty
           target_language: "en" // Default to English
@@ -88,7 +89,7 @@ const FactCheck = () => {
         }
         formData.append("text", textInput || ""); // Text might be empty for image-only analysis
         
-        response = await axios.post("http://127.0.0.1:8000/api/analyze/upload", formData, {
+        response = await axios.post(`${API_CONFIG.FACT_CHECK_API_URL}/api/analyze/upload`, formData, {
           headers: {
             "Content-Type": "multipart/form-data"
           }

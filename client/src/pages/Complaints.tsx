@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { API_CONFIG } from "@/config";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
@@ -212,7 +213,7 @@ const Complaints = () => {
 
             // Use Nominatim for reverse geocoding (free service)
             const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+              `${API_CONFIG.OPENSTREETMAP_API_URL}/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
               {
                 headers: {
                   "Accept-Language": "en-US,en",

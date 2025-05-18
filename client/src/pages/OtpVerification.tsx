@@ -32,7 +32,7 @@ const OtpVerification = () => {
     setError('');
 
     try {
-      const response = await fetch('https://civix-backend.onrender.com/api/auth/verify-otp', {
+      const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

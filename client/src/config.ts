@@ -9,6 +9,11 @@ export const API_CONFIG = {
   //BASE_URL: 'http://localhost:3000',
   BASE_URL: 'https://civix-backend.onrender.com',
   
+  // Fake News Analyzer API URL
+  FACT_CHECK_API_URL: 'https://fake-news-analyzer.onrender.com',
+  
+  // OpenStreetMap API URL
+  OPENSTREETMAP_API_URL: 'https://nominatim.openstreetmap.org',
   
   // API endpoints
   ENDPOINTS: {
