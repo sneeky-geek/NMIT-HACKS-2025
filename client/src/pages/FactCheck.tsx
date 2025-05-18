@@ -187,15 +187,9 @@ const FactCheck = () => {
           animate="visible"
           className="max-w-4xl mx-auto"
         >
-          <Card className="border border-border/50 overflow-hidden backdrop-blur-lg bg-background/80">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl font-semibold text-center">Verify Content</CardTitle>
-              <CardDescription className="text-center">
-                Upload content, paste a URL, or enter text to analyze for misinformation
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="p-6">
+          <Card className="relative overflow-hidden backdrop-blur-sm border-[3px] border-purple-800/40 dark:border-purple-600/40 shadow-[0_0_20px_rgba(124,58,237,0.15)] dark:shadow-[0_0_25px_rgba(124,58,237,0.2)] bg-gradient-to-br from-white/50 via-white/30 to-purple-50/20 dark:from-zinc-900/50 dark:via-purple-900/10 dark:to-zinc-900/50 ring-2 ring-purple-500/10 dark:ring-purple-400/10 ring-offset-2 ring-offset-background">
+           
+            <CardContent className="p-6 relative">
               <Tabs defaultValue="text" value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid grid-cols-2 mb-6">
                   <TabsTrigger value="text" className="flex items-center gap-2">
@@ -374,7 +368,7 @@ const FactCheck = () => {
                         </Badge>
                       </h3>
 
-                      <div className="space-y-4">
+                      <div className="mt-6 space-y-4 relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-purple-500/10 before:via-transparent before:to-transparent before:h-full before:w-2 before:rounded-l-lg">
                         <div>
                           <div className="flex justify-between mb-1">
                             <span className="text-sm font-medium">Confidence</span>
@@ -427,7 +421,7 @@ const FactCheck = () => {
                       exit={{ opacity: 0, y: -20 }}
                       className="mt-8 border border-destructive/50 rounded-lg p-4 bg-destructive/10"
                     >
-                      <div className="flex gap-3">
+                      <div className="flex flex-col gap-4 mt-6 relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-purple-500/10 before:via-transparent before:to-transparent before:h-full before:w-2 before:rounded-l-lg">
                         <X className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
                         <div>
                           <h3 className="font-medium text-destructive">Verification Failed</h3>
@@ -447,7 +441,7 @@ const FactCheck = () => {
             className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12"
           >
             <motion.div variants={itemVariants}>
-              <Card className="h-full bg-background/70 backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all">
+              <Card className="h-full bg-gradient-to-br from-white/50 via-white/30 to-purple-50/20 dark:from-zinc-900/50 dark:via-purple-900/10 dark:to-zinc-900/50 backdrop-blur-sm border-2 border-purple-800/20 dark:border-purple-600/20 hover:border-purple-800/40 dark:hover:border-purple-600/40 transition-all duration-300 shadow-[0_0_15px_rgba(124,58,237,0.05)] hover:shadow-[0_0_25px_rgba(124,58,237,0.15)] dark:shadow-[0_0_15px_rgba(124,58,237,0.1)] dark:hover:shadow-[0_0_25px_rgba(124,58,237,0.2)]">
                 <CardHeader>
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                     <ShieldAlert className="h-6 w-6 text-primary" />
@@ -461,7 +455,7 @@ const FactCheck = () => {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Card className="h-full bg-background/70 backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all">
+              <Card className="h-full bg-gradient-to-br from-white/50 via-white/30 to-purple-50/20 dark:from-zinc-900/50 dark:via-purple-900/10 dark:to-zinc-900/50 backdrop-blur-sm border-2 border-purple-800/20 dark:border-purple-600/20 hover:border-purple-800/40 dark:hover:border-purple-600/40 transition-all duration-300 shadow-[0_0_15px_rgba(124,58,237,0.05)] hover:shadow-[0_0_25px_rgba(124,58,237,0.15)] dark:shadow-[0_0_15px_rgba(124,58,237,0.1)] dark:hover:shadow-[0_0_25px_rgba(124,58,237,0.2)]">
                 <CardHeader>
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                     <SearchCheck className="h-6 w-6 text-primary" />
@@ -475,7 +469,7 @@ const FactCheck = () => {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Card className="h-full bg-background/70 backdrop-blur-sm border-primary/10 hover:border-primary/30 transition-all">
+              <Card className="h-full bg-gradient-to-br from-white/50 via-white/30 to-purple-50/20 dark:from-zinc-900/50 dark:via-purple-900/10 dark:to-zinc-900/50 backdrop-blur-sm border-2 border-purple-800/20 dark:border-purple-600/20 hover:border-purple-800/40 dark:hover:border-purple-600/40 transition-all duration-300 shadow-[0_0_15px_rgba(124,58,237,0.05)] hover:shadow-[0_0_25px_rgba(124,58,237,0.15)] dark:shadow-[0_0_15px_rgba(124,58,237,0.1)] dark:hover:shadow-[0_0_25px_rgba(124,58,237,0.2)]">
                 <CardHeader>
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                     <Lightbulb className="h-6 w-6 text-primary" />

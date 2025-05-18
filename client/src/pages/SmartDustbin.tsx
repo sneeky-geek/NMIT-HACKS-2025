@@ -88,7 +88,7 @@ const SmartDustbin = () => {
           const qrScanner = new Html5Qrcode("qr-reader");
           scannerRef.current = qrScanner;
           
-          const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+          const config = { fps: 10, qrbox: { width: 320, height: 320 } };
           
           await qrScanner.start(
             { facingMode: "environment" },
@@ -544,12 +544,14 @@ const SmartDustbin = () => {
                           
                         </div>
                       ) : (
-                        <div className="text-center text-muted-foreground p-4" ref={scannerContainerRef}>
-                          <Camera className="h-12 w-12 mx-auto mb-3 text-primary/70" />
-                          <p className="text-lg">Camera access required</p>
-                          <p className="text-sm mt-2">Click "Scan QR" to open camera</p>
+                        <div className="text-center text-muted-foreground p-6 bg-gradient-to-br from-white/50 via-white/30 to-purple-50/20 dark:from-zinc-900/50 dark:via-purple-900/10 dark:to-zinc-900/50 backdrop-blur-sm border-2 border-purple-800/20 dark:border-purple-600/20 rounded-xl shadow-[0_0_15px_rgba(124,58,237,0.05)] dark:shadow-[0_0_15px_rgba(124,58,237,0.1)]" ref={scannerContainerRef}>
+                          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                            <Camera className="h-8 w-8 text-primary/70" />
+                          </div>
+                          <p className="text-lg font-medium text-foreground">Camera access required</p>
+                          <p className="text-sm mt-2 text-muted-foreground">Click "Scan QR" to open camera</p>
                           {cameraError && (
-                            <div className="mt-4 p-2 bg-destructive/10 text-destructive rounded-md text-sm">
+                            <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-lg text-sm border border-destructive/20 shadow-sm">
                               {cameraError}
                             </div>
                           )}
