@@ -79,7 +79,7 @@ export function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.6 }}
             >
-              <Button size="lg" className="gap-2 group">
+              <Button size="lg" className="gap-2 group" onClick={() => window.location.href = '/login'}>
                 Get Started
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CheckCircle2, Building2 } from 'lucide-react';
+import { Navbar } from '@/components/Navbar';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -91,8 +92,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <>
+      <Navbar />
+      <div className="min-h-[calc(100vh-4rem)] bg-background/50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md border-primary/10 shadow-lg shadow-primary/5">
         <CardHeader className="pb-4">
           <CardTitle className="text-2xl font-bold text-center">Login to CiviX</CardTitle>
           <CardDescription className="text-center">
@@ -168,7 +171,8 @@ const Login = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 };
 
