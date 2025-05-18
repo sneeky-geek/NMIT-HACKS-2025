@@ -188,7 +188,15 @@ const FactCheck = () => {
           className="max-w-4xl mx-auto"
         >
           <Card className="relative overflow-hidden backdrop-blur-sm border-[3px] border-purple-800/40 dark:border-purple-600/40 shadow-[0_0_20px_rgba(124,58,237,0.15)] dark:shadow-[0_0_25px_rgba(124,58,237,0.2)] bg-gradient-to-br from-white/50 via-white/30 to-purple-50/20 dark:from-zinc-900/50 dark:via-purple-900/10 dark:to-zinc-900/50 ring-2 ring-purple-500/10 dark:ring-purple-400/10 ring-offset-2 ring-offset-background">
-           
+            <div className="absolute inset-px rounded-lg border-[3px] border-purple-500/5 dark:border-purple-400/5">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl font-semibold text-center">Verify Content</CardTitle>
+              <CardDescription className="text-center">
+                Upload content, paste a URL, or enter text to analyze for misinformation
+              </CardDescription>
+            </CardHeader>
+
+            </div>
             <CardContent className="p-6 relative">
               <Tabs defaultValue="text" value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid grid-cols-2 mb-6">
