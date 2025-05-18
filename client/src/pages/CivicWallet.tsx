@@ -406,16 +406,46 @@ const CivicWallet = () => {
                           variant="secondary" 
                           size="sm" 
                           className="flex items-center justify-center"
-                          onClick={() => {
-                            // Add 500 coins when clicked
+                          onClick={async () => {
+                            // First update the UI optimistically
                             addCoins(500);
                             
-                            // Show toast notification
+                            // Show success toast notification immediately
                             toast({
                               title: "Coins Added!",
                               description: "You've earned 500 Civic Coins for your participation.",
                               variant: "default",
                             });
+                            
+                            // Then update the database in the background
+                            try {
+                              const token = localStorage.getItem('token');
+                              if (token) {
+                                await fetch('http://localhost:3000/api/tokens/add', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                  },
+                                  body: JSON.stringify({ 
+                                    amount: 500,
+                                    source: 'wallet_bonus',
+                                    itemDetails: {
+                                      reason: 'Earn More button clicked'
+                                    }
+                                  })
+                                }).catch(err => {
+                                  // Silently log any errors without showing to user
+                                  console.error('Background save error (coins still added to UI):', err);
+                                  // We won't revert the coins as this would be confusing to users
+                                  // The next page refresh will sync with the database anyway
+                                });
+                              }
+                            } catch (error) {
+                              // Just log the error without showing the user
+                              // since we've already shown a success message
+                              console.error('Error in background coin update:', error);
+                            }
                           }}
                         >
                           <Sparkles className="h-4 w-4 mr-2" />

@@ -124,6 +124,7 @@ export const getUserProfile = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
         
+        // Include the tokens field in the response
         res.status(200).json({ 
             user: {
                 id: user._id,
@@ -133,6 +134,8 @@ export const getUserProfile = async (req, res) => {
                 phoneNumber: user.phoneNumber,
                 userType: user.userType,
                 verified: user.verified,
+                tokens: user.tokens, // Include tokens in user profile
+                volunteeredEvents: user.volunteeredEvents, // Include volunteered events
                 profile: user.profile,
                 ngoDetails: user.userType === 'ngo' ? user.ngoDetails : undefined
             }

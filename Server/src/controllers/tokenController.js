@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import TokenTransaction from '../models/TokenTransaction.js';
 
 // Get user tokens
 export const getUserTokens = async (req, res) => {
@@ -59,6 +60,48 @@ export const redeemTokens = async (req, res) => {
   } catch (error) {
     console.error('Error redeeming tokens:', error);
     res.status(500).json({ message: 'Failed to redeem tokens' });
+  }
+};
+
+// Add tokens (for recycling and other rewards)
+export const addTokens = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { amount, source, itemDetails } = req.body;
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: 'Invalid token amount' });
+    }
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Add tokens to user's balance
+    user.tokens += amount;
+    await user.save();
+    
+    // Record the transaction
+    const transaction = new TokenTransaction({
+      userId,
+      amount,
+      type: 'credit',
+      source: source || 'recycling',
+      details: itemDetails || {},
+      timestamp: new Date()
+    });
+    await transaction.save();
+    
+    res.status(200).json({
+      message: 'Tokens added successfully',
+      amount,
+      newBalance: user.tokens,
+      source
+    });
+  } catch (error) {
+    console.error('Error adding tokens:', error);
+    res.status(500).json({ message: 'Failed to add tokens' });
   }
 };
 
