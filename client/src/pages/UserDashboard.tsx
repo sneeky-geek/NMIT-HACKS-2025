@@ -52,9 +52,13 @@ const UserDashboard = () => {
   const { theme } = useTheme();
   const [timeRange, setTimeRange] = useState('monthly');
   const [progress, setProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setProgress(100), 500);
+    const timer = setTimeout(() => {
+      setProgress(100);
+      setIsLoading(false);
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -134,15 +138,19 @@ const UserDashboard = () => {
       </div>
       <Navbar />
       
-      <div className="container mx-auto px-4 py-8">
-        <motion.div 
-          className="max-w-7xl mx-auto"
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
+      <div className="container px-4 mx-auto py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-8"
         >
-          {/* Header with user info */}
-          <motion.div variants={itemVariants} className="mb-8">
+          {/* User Profile Section */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-primary/10 via-primary/5 to-background/80 backdrop-blur-lg p-6 rounded-2xl border border-white/10 shadow-lg mb-8"
+          >
+            {/* Header with user info */}
             <div className="flex flex-col md:flex-row gap-6 items-center bg-card dark:bg-zinc-800/50 rounded-xl p-6 shadow-sm border border-border dark:border-zinc-700">
               <Avatar className="h-24 w-24 ring-2 ring-primary/20 ring-offset-2 ring-offset-background">
                 {/* Using a professional person image for avatar */}
@@ -180,7 +188,11 @@ const UserDashboard = () => {
           </motion.div>
 
           {/* Time filter */}
-          <motion.div variants={itemVariants} className="flex justify-between items-center mb-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-between items-center mb-6"
+          >
             <h2 className="text-2xl font-bold">Dashboard Overview</h2>
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
@@ -197,35 +209,35 @@ const UserDashboard = () => {
             </div>
           </motion.div>
 
-          {/* Stats Cards */}
-          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {statsCards.map((stat, index) => (
-              <motion.div 
-                key={stat.title}
-                className="relative overflow-hidden bg-card dark:bg-zinc-800/50 rounded-xl border border-border dark:border-zinc-700 p-5 shadow-sm hover:shadow-md transition-all"
-                whileHover={{ y: -5, scale: 1.02 }}
-                transition={{ type: 'spring', stiffness: 300 }}
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[/* ... */].map((stat, index) => (
+              <Card 
+                key={stat.title} 
+                className="bg-gradient-to-br from-background/50 to-background/80 backdrop-blur border-white/10 shadow-lg hover:shadow-xl transition-all duration-200"
               >
-                <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-br opacity-10 dark:opacity-20 rounded-bl-3xl ${stat.color}`}></div>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
-                      {stat.icon} {stat.title}
-                    </p>
-                    <h3 className="text-3xl font-bold text-foreground">{stat.value}</h3>
-                    <div className="text-xs font-medium text-primary flex items-center mt-2">
-                      <ChevronUp className="h-3 w-3 mr-1" /> +{Math.floor(Math.random() * 10) + 5}% vs last {timeRange === 'monthly' ? 'month' : timeRange === 'weekly' ? 'week' : 'year'}
-                    </div>
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                  <div className={cn("p-2 rounded-full bg-primary/10", stat.color)}>
+                    {stat.icon}
                   </div>
-                </div>
-              </motion.div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className={cn("text-sm mt-1 flex items-center gap-1", stat.color)}>
+                    <ChevronUp className="h-4 w-4" />
+                    {stat.trend}
+                  </div>
+                </CardContent>
+              </Card>
             ))}
-          </motion.div>
+          </div>
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <motion.div
-              variants={itemVariants}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               className="bg-card dark:bg-zinc-800/50 p-6 rounded-xl border border-border dark:border-zinc-700 shadow-sm"
             >
               <CardHeader className="p-0 pb-4">
@@ -343,7 +355,7 @@ const UserDashboard = () => {
           {/* Recent Activities */}
           <motion.div 
             variants={itemVariants}
-            className="bg-card dark:bg-zinc-800/50 p-6 rounded-xl border border-border dark:border-zinc-700 shadow-sm mb-8"
+            className="bg-gradient-to-br from-primary/5 to-background/80 backdrop-blur-lg p-6 rounded-xl border border-white/10 shadow-lg mb-8"
           >
             <CardHeader className="p-0 pb-4">
               <CardTitle className="text-lg font-semibold">Recent Civic Activities</CardTitle>
@@ -354,8 +366,8 @@ const UserDashboard = () => {
                 {mockRecentActivities.map((activity) => (
                   <li key={activity.id}>
                     <motion.div 
-                      className="flex justify-between items-center p-3 rounded-lg hover:bg-accent/50 transition-colors"
-                      whileHover={{ x: 5 }}
+                      className="flex justify-between items-center p-3 rounded-lg hover:bg-primary/5 transition-colors"
+                      whileHover={{ x: 5, backgroundColor: 'rgba(var(--primary), 0.1)' }}
                     >
                       <div className="flex items-start gap-3">
                         <div className="p-2 rounded-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground">
@@ -388,7 +400,7 @@ const UserDashboard = () => {
                   whileHover={{ scale: 1.03 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                 >
-                  <Card className="h-full cursor-pointer bg-card dark:bg-zinc-800/50 border-border dark:border-zinc-700 hover:shadow-md transition-shadow" onClick={() => navigate(feature.path)}>
+                  <Card className="h-full cursor-pointer bg-gradient-to-br from-background/50 to-background/80 backdrop-blur border-white/10 shadow-lg hover:shadow-xl transition-all duration-200" onClick={() => navigate(feature.path)}>
                     <CardHeader className="pb-2">
                       <div className="flex items-center gap-3">
                         {feature.icon}

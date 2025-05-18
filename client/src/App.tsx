@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import CivicScroll from "./pages/CivicScroll";
 import SmartDustbin from "./pages/SmartDustbin";
@@ -26,7 +26,14 @@ const queryClient = new QueryClient();
 // Component to handle conditional redirects based on auth state
 const HomeRedirect = () => {
   const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
   
+  // If user explicitly navigated to home page (not initial load), show Index
+  if (location.state?.fromNavbar) {
+    return <Index />;
+  }
+  
+  // Otherwise, handle auth redirects
   if (!isAuthenticated) {
     return <Index />;
   }

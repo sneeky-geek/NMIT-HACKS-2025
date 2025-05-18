@@ -250,6 +250,58 @@ const SmartDustbin = () => {
           }
           
           console.log("Final coins to be awarded:", coinsEarned);
+          // Use the coin amount we already extracted from the raw text, if available
+          let coinsEarned = directCoinAmount;
+          
+          // If we didn't find coins in the raw text, try other methods
+          if (coinsEarned === 0) {
+            // Check the parsed data
+            const coinRegex = /\+?\s*(\d+)\s*coins/i;
+            
+            // Try recyclable field
+            if (parsedData.recyclable && typeof parsedData.recyclable === 'string') {
+              const recycleMatch = parsedData.recyclable.match(coinRegex);
+              if (recycleMatch && recycleMatch[1]) {
+                coinsEarned = parseInt(recycleMatch[1], 10);
+                console.log("Found coin amount in recyclable field:", coinsEarned);
+              }
+            }
+            
+            // Try wallet_update field
+            if (coinsEarned === 0 && parsedData.wallet_update && typeof parsedData.wallet_update === 'string') {
+              const walletMatch = parsedData.wallet_update.match(coinRegex);
+              if (walletMatch && walletMatch[1]) {
+                coinsEarned = parseInt(walletMatch[1], 10);
+                console.log("Found coin amount in wallet_update field:", coinsEarned);
+              }
+            }
+            
+            // Check explicit coinsEarned field
+            if (coinsEarned === 0 && parsedData.coinsEarned !== undefined) {
+              coinsEarned = Number(parsedData.coinsEarned);
+              console.log("Using explicit coinsEarned field:", coinsEarned);
+            }
+            
+            // Use object-specific default values as a last resort
+            if (coinsEarned === 0) {
+              const objectType = (parsedData.object || "").toLowerCase();
+              if (objectType.includes("laptop")) {
+                coinsEarned = 500;
+                console.log("Using default value of 500 coins for Laptop");
+              } else if (objectType.includes("mouse")) {
+                coinsEarned = 20;
+                console.log("Using default value of 20 coins for Computer Mouse");
+              } else {
+                // Fallback calculation
+                const estimatedValue = Number(parsedData.estimated_value) || 0;
+                const profitRating = Number(parsedData.profit_rating_out_of_10) || 0;
+                coinsEarned = Math.max(1, Math.floor((estimatedValue / 100) * (profitRating / 10) * 5));
+                console.log("Using calculated value:", coinsEarned);
+              }
+            }
+          }
+          
+          console.log("Final coins to be awarded:", coinsEarned);
           
           const response: QRResponse = {
             success: true,
@@ -322,7 +374,7 @@ const SmartDustbin = () => {
           }
           
           toast({
-            title: isRecyclable ? "Item is Recyclable! ♻️" : "Item is Not Recyclable ❌",
+            title: isRecyclable ? "Item is Recyclable! ♻" : "Item is Not Recyclable ❌",
             description: isRecyclable ? 
               `Successfully recycled ${parsedData.object}.` :
               `This item cannot be recycled. Please dispose properly.`,

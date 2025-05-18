@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, Building2 } from 'lucide-react';
+import { Navbar } from '@/components/Navbar';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -135,46 +136,48 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
-      <Card className="w-full max-w-md p-8">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Sign Up</CardTitle>
-          <CardDescription className="text-center">
-            Create your account to get started
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* User Type Selection Tabs */}
-          <Tabs defaultValue="user" className="mb-6" onValueChange={handleUserTypeChange}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="user" className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Volunteer</span>
-              </TabsTrigger>
-              <TabsTrigger value="ngo" className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                <span>NGO</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="user" className="mt-0">
-              <div className="rounded-lg bg-muted/50 p-4 mb-4">
-                <h3 className="font-medium mb-2">Volunteer Account</h3>
-                <p className="text-sm text-muted-foreground">
-                  Register as a volunteer to participate in community activities, earn civic points, and track your impact.
-                </p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="ngo" className="mt-0">
-              <div className="rounded-lg bg-muted/50 p-4 mb-4">
-                <h3 className="font-medium mb-2">NGO Account</h3>
-                <p className="text-sm text-muted-foreground">
-                  Register as an NGO to create activities, manage volunteers, and connect with the community.
-                </p>
-              </div>
-            </TabsContent>
-          </Tabs>
+    <>
+      <Navbar />
+      <div className="min-h-[calc(100vh-4rem)] bg-background/50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-4xl border-primary/10 shadow-lg shadow-primary/5 md:p-8">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center">Sign Up</CardTitle>
+            <CardDescription className="text-center">
+              Create your account to get started
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* User Type Selection Tabs */}
+            <Tabs defaultValue="user" className="mb-6" onValueChange={handleUserTypeChange}>
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="user" className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Volunteer</span>
+                </TabsTrigger>
+                <TabsTrigger value="ngo" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  <span>NGO</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="user" className="mt-0">
+                <div className="rounded-lg bg-muted/50 p-4 mb-4">
+                  <h3 className="font-medium mb-2">Volunteer Account</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Register as a volunteer to participate in community activities, earn civic points, and track your impact.
+                  </p>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="ngo" className="mt-0">
+                <div className="rounded-lg bg-muted/50 p-4 mb-4">
+                  <h3 className="font-medium mb-2">NGO Account</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Register as an NGO to create activities, manage volunteers, and connect with the community.
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -399,7 +402,7 @@ const Signup = () => {
             
             <Button 
               type="submit" 
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-md py-2 px-4"
+              className="w-full"
               disabled={loading}
             >
               {loading ? 'Registering...' : `Register as ${userType === 'ngo' ? 'NGO' : 'Volunteer'}`}
@@ -408,6 +411,7 @@ const Signup = () => {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };
 

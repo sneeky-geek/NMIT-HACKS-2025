@@ -101,7 +101,13 @@ export function Navbar() {
         : "bg-background/70 backdrop-blur-sm"
     )}>
       <div className="container flex items-center justify-between h-16 px-4 mx-auto">
-        <Link to="/" className="flex items-center space-x-2 group">
+        <Link 
+          to="/" 
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/', { state: { fromNavbar: true } });
+          }} 
+          className="flex items-center space-x-2 group">
           <img src="/logo.png" alt="CiviX Logo" className="h-16 w-auto transform transition-transform group-hover:scale-110 duration-300" />
           <span className="font-poppins font-semibold text-lg tracking-tight">CiviX</span>
         </Link>
