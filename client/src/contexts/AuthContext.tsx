@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { API_CONFIG, getApiUrl } from '@/config';
 
 interface User {
   id: string;
@@ -68,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Fetch user profile when token is available
   const fetchUserProfile = async (authToken: string) => {
     try {
-      const response = await fetch('/api/auth/profile', {
+      const response = await fetch(getApiUrl('/api/auth/profile'), {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }

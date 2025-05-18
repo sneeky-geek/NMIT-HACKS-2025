@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { API_CONFIG, getApiUrl } from "@/config";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, Calendar, MapPin, LoaderCircle, Users, Clock, AlertTriangle } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
@@ -49,7 +50,7 @@ const MyWork = () => {
       try {
         if (!token) return;
 
-        const response = await fetch('/api/tokens/history', {
+        const response = await fetch(getApiUrl('/api/tokens/history'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }

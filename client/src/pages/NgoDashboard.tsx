@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
+import { API_CONFIG, getApiUrl } from '@/config';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -77,7 +78,7 @@ const NgoDashboard = () => {
       try {
         console.log('Fetching NGO activities with token:', token ? 'Token exists' : 'No token');
         
-        const response = await fetch('/api/ngo/my-activities', {
+        const response = await fetch(getApiUrl('/api/ngo/my-activities'), {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -116,7 +117,7 @@ const NgoDashboard = () => {
       console.log('Creating new activity:', newActivity);
       console.log('User type:', user?.userType);
       
-      const response = await fetch('/api/ngo/activities', {
+      const response = await fetch(getApiUrl('/api/ngo/activities'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

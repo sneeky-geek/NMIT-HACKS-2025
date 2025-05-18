@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
+import { API_CONFIG, getApiUrl } from '@/config';
 
 const OtpVerification = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ const OtpVerification = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/verify-otp', {
+      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.AUTH.VERIFY_OTP), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -16,8 +16,10 @@ import {
   AlertCircle,
   Plus
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
+import { useAuth } from '@/contexts/AuthContext';
+import { API_CONFIG, getApiUrl } from '@/config';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +28,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 
 // CiviX missions data
 const civixMissions = [
@@ -258,7 +259,7 @@ export default function Missions() {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch('/api/ngo/activities', { headers });
+      const response = await fetch(getApiUrl('/api/ngo/activities'), { headers });
       const data = await response.json();
       
       if (response.ok) {
@@ -351,7 +352,7 @@ export default function Missions() {
       const organizationName = user.ngoDetails?.organizationName || '';
       
       // Make API call to create activity in the database
-      const response = await fetch('/api/ngo/activities', {
+      const response = await fetch(getApiUrl('/api/ngo/activities'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

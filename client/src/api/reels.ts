@@ -1,4 +1,5 @@
 // API client for interacting with the reels endpoints
+import { API_CONFIG, getApiUrl } from '@/config';
 
 // Interfaces for API responses
 export interface ReelData {
@@ -27,6 +28,7 @@ export interface ApiResponse<T> {
 }
 
 // Base URL for API endpoints
+// Use the centralized config for the base URL
 const API_BASE_URL = '/api';
 
 /**
@@ -34,7 +36,7 @@ const API_BASE_URL = '/api';
  */
 export const fetchReels = async (): Promise<ReelData[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/reels`);
+    const response = await fetch(getApiUrl(`${API_BASE_URL}/reels`));
     
     if (!response.ok) {
       const errorData = await response.json();
@@ -75,7 +77,7 @@ export const uploadReel = async (
       formData.append('soundOn', 'true');
     }
     
-    const response = await fetch(`${API_BASE_URL}/reels`, {
+    const response = await fetch(getApiUrl(`${API_BASE_URL}/reels`), {
       method: 'POST',
       body: formData,
       // Do not set Content-Type header - browser will set it with boundary for FormData
@@ -105,7 +107,7 @@ export const uploadReel = async (
  */
 export const likeReel = async (reelId: string, action: 'like' | 'unlike' | 'share'): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/reels/${reelId}`, {
+    const response = await fetch(getApiUrl(`${API_BASE_URL}/reels/${reelId}`), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -131,7 +133,7 @@ export const likeReel = async (reelId: string, action: 'like' | 'unlike' | 'shar
  */
 export const shareReel = async (reelId: string): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/reels/${reelId}`, {
+    const response = await fetch(getApiUrl(`${API_BASE_URL}/reels/${reelId}`), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -157,7 +159,7 @@ export const shareReel = async (reelId: string): Promise<boolean> => {
  */
 export const deleteReel = async (reelId: string): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/reels/${reelId}`, {
+    const response = await fetch(getApiUrl(`${API_BASE_URL}/reels/${reelId}`), {
       method: 'DELETE',
     });
     
