@@ -191,9 +191,7 @@ const FactCheck = () => {
             <div className="absolute inset-px rounded-lg border-[3px] border-purple-500/5 dark:border-purple-400/5">
             <CardHeader className="pb-4">
               <CardTitle className="text-xl font-semibold text-center">Verify Content</CardTitle>
-              <CardDescription className="text-center">
-                Upload content, paste a URL, or enter text to analyze for misinformation
-              </CardDescription>
+              
             </CardHeader>
 
             </div>
