@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import { API_CONFIG, getApiUrl } from "@/config";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useCivicCoins } from "@/contexts/CivicCoinsContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -421,7 +422,7 @@ const CivicWallet = () => {
                             try {
                               const token = localStorage.getItem('token');
                               if (token) {
-                                await fetch('http://localhost:3000/api/tokens/add', {
+                                await fetch(getApiUrl(API_CONFIG.ENDPOINTS.TOKENS.ADD), {
                                   method: 'POST',
                                   headers: {
                                     'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import { API_CONFIG, getApiUrl } from "@/config";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Trash2, Coins, Camera, Check, Copy, RefreshCw, ArrowRight, X } from "lucide-react";
@@ -278,7 +279,7 @@ const SmartDustbin = () => {
               try {
                 const token = localStorage.getItem('token');
                 if (token) {
-                  const response = await fetch('http://localhost:3000/api/tokens/add', {
+                  const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.TOKENS.ADD), {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',

@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CheckCircle2, Building2 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
+import { API_CONFIG, getApiUrl } from '@/config';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const Login = () => {
 
     try {
       // Use the correct API endpoint with full URL
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.AUTH.LOGIN), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

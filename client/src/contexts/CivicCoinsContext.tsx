@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import { API_CONFIG, getApiUrl } from '@/config';
 
 // Define the context type
 interface CivicCoinsContextType {
@@ -52,7 +53,7 @@ export const CivicCoinsProvider: React.FC<CivicCoinsProviderProps> = ({ children
               return;
             }
             
-            const response = await fetch('http://localhost:3000/api/tokens/balance', {
+            const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.TOKENS.BALANCE), {
               headers: {
                 'Authorization': `Bearer ${token}`
               }
@@ -106,7 +107,7 @@ export const CivicCoinsProvider: React.FC<CivicCoinsProviderProps> = ({ children
       const token = localStorage.getItem('token');
       if (!token) return;
       
-      const response = await fetch('http://localhost:3000/api/tokens/redeem', {
+      const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.TOKENS.REDEEM), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

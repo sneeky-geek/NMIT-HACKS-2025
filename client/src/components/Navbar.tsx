@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, Home, Scroll, Trash2, Wallet, LogIn, LogOut, Trophy, User, SearchCheck, Briefcase, Coins, AlertTriangle } from "lucide-react";
+import { API_CONFIG, getApiUrl } from "@/config";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -38,7 +39,7 @@ export function Navbar() {
             const token = localStorage.getItem('token');
             if (!token) return;
             
-            const response = await fetch('http://localhost:3000/api/tokens/balance', {
+            const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.TOKENS.BALANCE), {
               headers: {
                 'Authorization': `Bearer ${token}`
               }

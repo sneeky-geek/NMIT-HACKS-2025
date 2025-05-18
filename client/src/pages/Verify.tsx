@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { API_CONFIG, getApiUrl } from '@/config';
 
 function toE164(phone, defaultCountry = '+91') {
   if (phone.startsWith('+')) return phone;
@@ -23,7 +24,7 @@ const Verify = () => {
     setError('');
     try {
       const formattedPhone = toE164(phone);
-      const res = await fetch('http://localhost:3000/api/auth/verify-otp', {
+      const res = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.AUTH.VERIFY_OTP), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phoneNumber: formattedPhone, code: otp })

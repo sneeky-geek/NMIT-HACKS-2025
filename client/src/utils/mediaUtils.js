@@ -2,7 +2,9 @@
  * Utility functions for handling media URLs
  */
 
-const SERVER_BASE_URL = 'http://localhost:3000';
+import { API_CONFIG } from '../config';
+
+const SERVER_BASE_URL = API_CONFIG.BASE_URL;
 
 /**
  * Ensures a media URL is properly formatted with the correct server base URL

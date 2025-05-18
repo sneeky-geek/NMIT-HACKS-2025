@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_CONFIG } from '@/config';
 
 interface MediaDisplayProps {
   mediaUrl: string;
@@ -33,7 +34,7 @@ const MediaDisplay: React.FC<MediaDisplayProps> = ({
   useEffect(() => {
     // Process the URL to ensure it's using the correct server base URL
     if (mediaUrl) {
-      const serverBaseUrl = 'http://localhost:3000';
+      const serverBaseUrl = API_CONFIG.BASE_URL;
       
       // Extract the file path/name from the URL (handle both localhost:8080 and localhost:3000 URLs)
       let filePath = mediaUrl;

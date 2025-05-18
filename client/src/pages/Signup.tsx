@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, Building2 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
+import { API_CONFIG, getApiUrl } from '@/config';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -65,8 +66,8 @@ const Signup = () => {
     try {
       // Choose the appropriate API endpoint based on user type
       const endpoint = userType === 'ngo' 
-        ? 'http://localhost:3000/api/auth/register-ngo'
-        : 'http://localhost:3000/api/auth/register';
+        ? getApiUrl(API_CONFIG.ENDPOINTS.AUTH.REGISTER_NGO)
+        : getApiUrl(API_CONFIG.ENDPOINTS.AUTH.REGISTER);
       
       console.log(`Registering as ${userType} using endpoint:`, endpoint);
       

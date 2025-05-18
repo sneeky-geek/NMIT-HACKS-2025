@@ -1,7 +1,8 @@
 // API calls for reels
 import { processReelsMedia } from '../utils/mediaUtils';
+import { API_CONFIG } from '../config';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = API_CONFIG.BASE_URL;
 const API_URL = `${BASE_URL}/api`;
 
 /**
