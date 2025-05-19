@@ -11,7 +11,7 @@ Civic participation is often limited by lack of trust, misinformation, and ineff
 ## 💡 Our Solution  
 ### 🤖 **1. AI-powered FactCheck Bots**  
 - Developed **Telegram and WhatsApp bots** to analyze and flag fake news automatically.  
-- Leveraged **Google GenAI & Gemini APIs** for reliable fact verification.  
+- Leveraged **Gemini APIs** for reliable fact verification.  
 
 ### ♻️ **2. Smart Dustbin with Civic Coins**  
 - Implemented smart dustbins that reward users with **Civic Coins** for recycling.  
