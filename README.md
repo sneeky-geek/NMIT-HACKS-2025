@@ -1,7 +1,7 @@
 # CiviX  
 # Civic Engagement & Misinformation Mitigation Platform  
 
-## 📌 Problem Statement (Provided by NMIT Hacks 2025)  
+## 📌 Problem Statement 
 Civic participation is often limited by lack of trust, misinformation, and inefficient reporting channels. The goal is to **empower citizens** through:  
 - **Fact-checking fake news** via popular messaging platforms.  
 - **Encouraging recycling and waste management** with rewards.  
