@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recycle Item Scanner & QR Generator</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>♻️ Recycle Item Scanner & QR Generator</h1>
+      <div class="scan-form-container">
+        <form id="scan-form">
+          <div class="form-group">
+            <label for="user-id">Enter your user ID:</label>
+            <input type="text" id="user-id" name="user_id" required />
+          </div>
+          <div class="form-group">
+            <label for="num-objects"
+              >Number of different objects to scan:</label
+            >
+            <input
+              type="number"
+              id="num-objects"
+              name="num_objects"
+              min="1"
+              value="1"
+              required
+            />
+          </div>
+          <div id="objects-container"></div>
+          <button type="submit">Analyze & Generate QR</button>
+        </form>
+      </div>
+      <div id="results-section">
+        <h2>Analysis Results</h2>
+        <div id="analysis-results"></div>
+        <div id="qr-section" style="display: none">
+          <h2>Generated QR Code</h2>
+          <img id="qr-image" src="" alt="QR Code" />
+        </div>
+      </div>
+    </div>
+    <script src="/static/js/main.js"></script>
+  </body>
+</html>
