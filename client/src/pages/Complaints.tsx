@@ -650,7 +650,7 @@ const Complaints = () => {
                   >
                     <div className="aspect-video w-full overflow-hidden">
                       <img
-                        src={`/api/complaints/${complaint._id}/image`}
+                        src={`https://civix-backend.onrender.com/api/complaints/${complaint._id}/image`}
                         alt={complaint.title}
                         className="w-full h-full object-cover transition-all hover:scale-105"
                       />
