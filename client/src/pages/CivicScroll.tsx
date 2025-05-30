@@ -568,7 +568,10 @@ const CivicScroll = () => {
           </div>
         )}
         
-        
+        {/* Media error notice */}
+        <div id="video-error-notice" className="hidden fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-500/80 text-white px-4 py-2 rounded-full text-sm z-50">
+          Error loading media! Using sample images instead.
+        </div>
         
         {/* Sound permission notice - shown if not interacted yet */}
         {!hasUserInteracted && reels.length > 0 && (

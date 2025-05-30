@@ -130,7 +130,7 @@ const Complaints = () => {
     try {
       if (!token) return;
 
-      const response = await fetch("/api/complaints/my-complaints", {
+      const response = await fetch("https://civix-backend.onrender.com/api/complaints/my-complaints", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
