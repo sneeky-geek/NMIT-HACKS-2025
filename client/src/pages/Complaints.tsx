@@ -300,7 +300,7 @@ const Complaints = () => {
       // Wait for geolocation data (or timeout) before submitting
       await locationPromise;
 
-      const response = await fetch("/api/complaints", {
+      const response = await fetch("https://civix-backend.onrender.com/api/complaints", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -388,7 +388,7 @@ const Complaints = () => {
     setDeletingComplaintId(complaintId);
     
     try {
-      const response = await fetch(`/api/complaints/${complaintId}`, {
+      const response = await fetch(`https://civix-backend.onrender.com/api/complaints/${complaintId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
