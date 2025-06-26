@@ -18,8 +18,8 @@ Your task is to analyze the object shown in the provided image and respond to th
     "object": "name of the object",
     "product_type": "type of product (e.g., plastic, metal, paper, etc.)",
   "recyclable": "Yes" or "No",
-  "estimated_value": approximate value (number only, no ₹ symbol),
-  "profit_rating_out_of_10": integer rating from 1 to 10
+  "Coins_earned": approximate value (number only, no ₹ symbol),
+  
 }
 
 Guidelines:

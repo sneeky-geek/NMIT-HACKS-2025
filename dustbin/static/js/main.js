@@ -231,7 +231,7 @@ document.getElementById("scan-form").addEventListener("submit", async function (
         timerDiv.id = "qr-timer";
         document.getElementById("qr-section").appendChild(timerDiv);
       }
-      let seconds = 15;
+      let seconds = 180;
       const radius = 32;
       const circumference = 2 * Math.PI * radius;
       timerDiv.innerHTML = `
