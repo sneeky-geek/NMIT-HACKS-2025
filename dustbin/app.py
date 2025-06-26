@@ -231,9 +231,9 @@ async def generate_qr_endpoint(request: GenerateQRRequest):
                     "object": analysis_json.get("object", "Unknown"),
                     "product_type": row[1] if row[1] else analysis_json.get("product_type", "Unknown"),
                     "number_of_items": obj.number_of_items,
-                    "estimated_value": obj.number_of_items * float(estimated_value),
+                    "coins_earned": obj.number_of_items * float(estimated_value),
                     "recyclable": analysis_json.get("recyclable", "Unknown"),
-                    "profit_rating_out_of_10": analysis_json.get("profit_rating_out_of_10", 0)
+                    # "profit_rating_out_of_10": analysis_json.get("profit_rating_out_of_10", 0)
                 }
                 
                 logging.info(f"Object data: {obj_data}")
